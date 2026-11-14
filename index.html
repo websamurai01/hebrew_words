@@ -369,7 +369,7 @@
     font-size: 22px; font-weight: 600; line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: transform .12s, background .15s, border-color .15s;
-    user-select: none;
+    user-select: none; touch-action: manipulation;
   }
   .key-btn:active {
     transform: scale(.92); background: rgba(200, 101, 77, .08);
@@ -1009,7 +1009,10 @@ function buildCells(hebrew) {
     currentCells.push(input);
     attachCellHandler(input, i);
   });
-  setTimeout(() => { if (currentCells[0]) currentCells[0].focus(); }, 150);
+  applyKbInputGuard();
+  setTimeout(function () {
+    if (currentCells[0]) focusNoScroll(currentCells[0]);
+  }, 150);
 }
 
 function attachCellHandler(input, idx) {
@@ -1029,7 +1032,7 @@ function attachCellHandler(input, idx) {
         next.value = '';
         next.classList.remove('wrong-cell', 'shake');
       }
-      next.focus();
+      focusNoScroll(next);
     } else {
       input.blur();
       checkLearnAnswer();
@@ -1041,7 +1044,7 @@ function attachCellHandler(input, idx) {
       if (input.value === '') {
         if (idx - 1 >= 0) {
           const prev = currentCells[idx - 1];
-          prev.focus();
+          focusNoScroll(prev);
           prev.value = '';
           prev.classList.remove('wrong-cell', 'shake');
           e.preventDefault();
@@ -1054,7 +1057,9 @@ function attachCellHandler(input, idx) {
   });
 
   input.addEventListener('focus', () => {
-    setTimeout(() => input.select(), 0);
+    setTimeout(function () {
+      if (document.activeElement === input) input.select();
+    }, 0);
   });
 }
 
@@ -1102,8 +1107,8 @@ function checkLearnAnswer() {
     const firstWrong = Math.min(...wrongIndices);
     setTimeout(() => {
       currentCells.forEach(c => c.classList.remove('shake'));
-      currentCells[0].focus();
-      currentCells[0].select();
+      focusNoScroll(currentCells[0]);
+      try { currentCells[0].select(); } catch (e) {}
     }, 450);
   }
 }
@@ -1163,14 +1168,15 @@ function renderReview() {
   input.value = '';
   input.classList.remove('shake');
   document.getElementById('review-answer').textContent = '';
-  setTimeout(() => input.focus(), 200);
+  applyKbInputGuard();
+  setTimeout(function () { focusNoScroll(input); }, 200);
 }
 
 function checkReviewAnswer() {
   if (!currentReviewWord) return;
   const input = document.getElementById('review-input');
   const ans = (input.value || '').trim();
-  if (!ans) { input.focus(); return; }
+  if (!ans) { focusNoScroll(input); return; }
 
   let normalized = [...ans].join('');
   if (normalized.length) {
@@ -1460,6 +1466,55 @@ const HE_KEYS = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י',
                  'כ','ך','ל','מ','ם','נ','ן','ס','ע','פ',
                  'ף','צ','ץ','ק','ר','ש','ת'];
 
+function isCoarsePointer() {
+  return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+}
+
+function focusNoScroll(el) {
+  if (!el) return;
+  try { el.focus({ preventScroll: true }); }
+  catch (e) { el.focus(); }
+}
+
+/* While the in-app keyboard is open, block the native soft keyboard.
+   On touch devices inputs also become read-only (iOS needs this). */
+function applyKbInputGuard() {
+  const active = keyboardOpen && kbContextOK();
+  const blockNative = active && isCoarsePointer();
+  const inputs = document.querySelectorAll('.cell, #review-input');
+  Array.prototype.forEach.call(inputs, function (inp) {
+    if (active) inp.setAttribute('inputmode', 'none');
+    else inp.removeAttribute('inputmode');
+    inp.readOnly = blockNative;
+  });
+}
+
+function bindKeyAction(el, action) {
+  if (window.PointerEvent) {
+    el.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      action();
+    });
+  } else {
+    el.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      action();
+    });
+    el.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      action();
+    }, { passive: false });
+  }
+  el.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
+  });
+}
+
 function buildKeyboard() {
   const grid = document.getElementById('keyboard-grid');
   if (!grid) return;
@@ -1470,8 +1525,7 @@ function buildKeyboard() {
     b.className = 'key-btn';
     b.textContent = ch;
     b.setAttribute('aria-label', ch);
-    b.addEventListener('mousedown', function (e) { e.preventDefault(); });
-    b.addEventListener('click', function () { kbInsert(ch); });
+    bindKeyAction(b, function () { kbInsert(ch); });
     grid.appendChild(b);
   });
   const back = document.createElement('button');
@@ -1479,8 +1533,7 @@ function buildKeyboard() {
   back.className = 'key-btn key-back';
   back.textContent = '⌫';
   back.setAttribute('aria-label', 'Backspace');
-  back.addEventListener('mousedown', function (e) { e.preventDefault(); });
-  back.addEventListener('click', kbBackspace);
+  bindKeyAction(back, kbBackspace);
   grid.appendChild(back);
 }
 
@@ -1516,8 +1569,7 @@ function kbTarget() {
 }
 
 function focusEnd(input) {
-  try { input.focus({ preventScroll: true }); }
-  catch (e) { input.focus(); }
+  if (document.activeElement !== input) focusNoScroll(input);
   const len = input.value.length;
   try { input.setSelectionRange(len, len); } catch (e) {}
 }
@@ -1526,7 +1578,7 @@ function kbInsert(ch) {
   const target = kbTarget();
   if (!target) return;
   if (target.classList.contains('cell')) {
-    target.focus();
+    if (document.activeElement !== target) focusNoScroll(target);
     target.value = ch;
     target.dispatchEvent(new Event('input', { bubbles: true }));
   } else {
@@ -1539,7 +1591,7 @@ function kbBackspace() {
   const target = kbTarget();
   if (!target) return;
   if (target.classList.contains('cell')) {
-    target.focus();
+    if (document.activeElement !== target) focusNoScroll(target);
     if (target.value) {
       target.value = '';
       target.classList.remove('wrong-cell', 'shake');
@@ -1549,7 +1601,7 @@ function kbBackspace() {
         const prev = currentCells[idx - 1];
         prev.value = '';
         prev.classList.remove('wrong-cell', 'shake');
-        prev.focus();
+        focusNoScroll(prev);
       }
     }
   } else {
@@ -1565,15 +1617,22 @@ function syncKeyboard() {
   if (kb) kb.setAttribute('aria-hidden', show ? 'false' : 'true');
   const btn = document.getElementById('btn-keyboard');
   if (btn) btn.classList.toggle('active', show);
+  applyKbInputGuard();
 }
 
 function setKeyboardOpen(open) {
   keyboardOpen = open;
   try { localStorage.setItem(LS_KB, open ? '1' : '0'); } catch (e) {}
+  if (open && isCoarsePointer()) {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      try { active.blur(); } catch (e) {}
+    }
+  }
   syncKeyboard();
-  if (open && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+  if (open && !isCoarsePointer()) {
     const target = kbTarget();
-    if (target) target.focus();
+    if (target) focusNoScroll(target);
   }
 }
 
