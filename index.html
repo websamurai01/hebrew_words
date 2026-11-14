@@ -208,7 +208,7 @@
     color: var(--danger); min-height: 18px; margin-top: 8px; font-weight: 700;
   }
 
-  /* ===== Саб-табы внутри Проверки ===== */
+  
   .subtabs {
     display: flex; gap: 4px;
     background: var(--card2); padding: 4px;
@@ -227,7 +227,7 @@
     color: var(--accent);
   }
 
-  /* ===== Словарь ===== */
+  
   .dict-selected-info {
     text-align: center; font-size: 12px; font-weight: 700; color: var(--accent2);
     padding: 9px 12px; background: rgba(45, 125, 140, .07);
@@ -298,7 +298,7 @@
     border-radius: 10px;
   }
 
-  /* ===== Язык и клавиатура в шапке ===== */
+  
   .header-tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .tool-btn {
     width: 30px; height: 26px; padding: 0;
@@ -331,7 +331,7 @@
   }
   .flag-btn span { pointer-events: none; }
 
-  /* ===== Экранная клавиатура ===== */
+  
   body.kb-open { padding-bottom: calc(252px + env(safe-area-inset-bottom)); }
   .keyboard {
     position: fixed; left: 50%; bottom: 0;
@@ -377,7 +377,7 @@
   }
   .key-btn.key-back { font-size: 18px; color: var(--muted); }
 
-  /* ===== Тост ===== */
+  
   .toast {
     position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
     transform: translate(-50%, 12px);
@@ -434,7 +434,7 @@
     <div class="subtab" id="subtab-dict"><span data-i18n="dictionary">Словарь</span> (<span id="dict-count">0</span>)</div>
   </div>
 
-  <!-- Тренировка -->
+  
   <div id="review-train">
     <div class="empty" id="review-empty">
       <div class="empty-icon">📚</div>
@@ -453,7 +453,7 @@
     </div>
   </div>
 
-  <!-- Словарь -->
+  
   <div id="review-dict" style="display:none; flex-direction:column;">
     <div class="dict-selected-info" id="dict-selected-info"></div>
     <div class="dict-controls">
@@ -493,9 +493,7 @@
 </div>
 
 <script>
-/* ============================================================
-   ИВРИТ 100 — автономное PWA-приложение (Средиземноморье)
-   ============================================================ */
+
 
 const VOCABULARY = [
   { id: 1, emoji: "👋", en: "hello / peace", hebrew: "שלום", translit: "шалом" },
@@ -600,7 +598,7 @@ const VOCABULARY = [
   { id: 100, emoji: "⬅️", en: "left (dir)", hebrew: "שמאלה", translit: "смола" }
 ];
 
-/* ----------------- Латиница для английской версии ----------------- */
+
 const RU_LAT = {
   'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'yo', 'ж':'zh',
   'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o',
@@ -615,10 +613,10 @@ function romanize(text) {
 }
 VOCABULARY.forEach(function (w) { w.translitEn = romanize(w.translit); });
 
-/* ----------------- Софийные буквы ----------------- */
+
 const SOFIYOT = { 'מ':'ם','כ':'ך','פ':'ף','נ':'ן','צ':'ץ' };
 
-/* ----------------- Ключи localStorage ----------------- */
+
 const LS_KEY      = 'hebrew100_learned_v2';
 const LS_STATS    = 'hebrew100_stats_v2';
 const LS_SELECTED = 'hebrew100_selected_v2';
@@ -626,7 +624,7 @@ const LS_SORT     = 'hebrew100_sort_v2';
 const LS_LANG     = 'hebrew100_lang_v1';
 const LS_KB       = 'hebrew100_keyboard_v1';
 
-/* ----------------- Состояние ----------------- */
+
 let learned = new Set(loadLearned());
 let stats = loadStats();
 let selected = new Set(loadSelected().filter(id => learned.has(id)));
@@ -658,7 +656,7 @@ function loadKeyboard() {
   return !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches);
 }
 
-/* ----------------- Локализация RU / EN ----------------- */
+
 const I18N = {
   ru: {
     appTitle: 'Иврит · 100 слов',
@@ -741,7 +739,7 @@ function translitFor(word) {
   return currentLang === 'en' ? word.translitEn : word.translit;
 }
 
-/* ----------------- Загрузка / сохранение ----------------- */
+
 function loadLearned() {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -785,7 +783,7 @@ function saveSort(v) {
   try { localStorage.setItem(LS_SORT, v); } catch {}
 }
 
-/* ----------------- Статистика слов ----------------- */
+
 function getWordStats(id) {
   const s = stats[id] || { c: 0, w: 0 };
   const total = s.c + s.w;
@@ -805,13 +803,13 @@ function rateColor(rate) {
   return 'var(--danger)';
 }
 
-/* ----------------- TTS (desktop / Android / iOS) ----------------- */
+
 let voices = [];
 let heVoice = null;
 let ruVoice = null;
 let enVoice = null;
 let anyVoice = null;
-let currentUtterance = null; // keeps the utterance alive (Chrome GC bug)
+let currentUtterance = null; 
 let pendingSpeak = null;
 
 function findVoice(langRe, nameRe) {
@@ -834,7 +832,7 @@ if ('speechSynthesis' in window) {
   } else {
     speechSynthesis.onvoiceschanged = refreshVoices;
   }
-  // iOS/Safari only allows synthesis after a user gesture.
+  
   const unlockTTS = function () {
     try { speechSynthesis.resume(); } catch (e) {}
     refreshVoices();
@@ -916,7 +914,7 @@ function speakWord(word, slow, isRetry) {
   speakText(text, lang, voice, rate);
 }
 
-/* ----------------- Прогресс и табы ----------------- */
+
 function updateProgress() {
   const total = VOCABULARY.length;
   const learnedCount = learned.size;
@@ -969,7 +967,7 @@ document.getElementById('btn-keyboard-close').addEventListener('click', function
   setKeyboardOpen(false);
 });
 
-/* ----------------- ОБУЧЕНИЕ ----------------- */
+
 function renderLearnCard() {
   let idx = -1;
   for (let i = 0; i < VOCABULARY.length; i++) {
@@ -1113,7 +1111,7 @@ function checkLearnAnswer() {
   }
 }
 
-/* ----------------- АУДИО КНОПКИ ----------------- */
+
 document.getElementById('btn-audio-1').addEventListener('click', () => {
   if (currentLearnWord) speakWord(currentLearnWord, false);
 });
@@ -1121,7 +1119,7 @@ document.getElementById('btn-audio-slow').addEventListener('click', () => {
   if (currentLearnWord) speakWord(currentLearnWord, true);
 });
 
-/* ----------------- ПРОВЕРКА (Тренировка) ----------------- */
+
 function buildReviewQueue() {
   let pool = VOCABULARY.filter(w => learned.has(w.id));
   if (selected.size > 0) {
@@ -1147,12 +1145,12 @@ function renderReview() {
   document.getElementById('review-empty').style.display = 'none';
   document.getElementById('review-content').style.display = 'block';
 
-  // Информация о выбранном наборе
+  
   updateTrainInfo();
 
   if (reviewQueue.length === 0) reviewQueue = buildReviewQueue();
   if (reviewQueue.length === 0) {
-    // выбранные слова не входят в выученные
+    
     document.getElementById('review-empty').style.display = 'flex';
     document.getElementById('review-empty').querySelector('.empty-title').textContent = t('noSelectedTitle');
     document.getElementById('review-empty').querySelector('.empty-text').textContent = t('noSelectedText');
@@ -1213,7 +1211,7 @@ document.getElementById('review-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); checkReviewAnswer(); }
 });
 
-/* ----------------- СЛОВАРЬ ----------------- */
+
 function renderDictionary() {
   updateProgress();
   const learnedList = VOCABULARY.filter(w => learned.has(w.id));
@@ -1230,28 +1228,28 @@ function renderDictionary() {
   document.getElementById('dict-selected-info').style.display = '';
   document.querySelector('.dict-controls').style.display = '';
 
-  // Информация о выборе
+  
   updateDictSelectedInfo();
 
-  // Сортировка
+  
   const sorted = [...learnedList];
   if (dictSort === 'worst') {
     sorted.sort((a, b) => {
       const ra = getWordStats(a.id).rate;
       const rb = getWordStats(b.id).rate;
       if (ra === null && rb === null) return a.id - b.id;
-      if (ra === null) return -1;  // непроверенные — в начале (как самые "сложные")
+      if (ra === null) return -1;  
       if (rb === null) return 1;
-      return ra - rb;  // по возрастанию (худшие первыми)
+      return ra - rb;  
     });
   } else if (dictSort === 'best') {
     sorted.sort((a, b) => {
       const ra = getWordStats(a.id).rate;
       const rb = getWordStats(b.id).rate;
       if (ra === null && rb === null) return a.id - b.id;
-      if (ra === null) return 1;   // непроверенные — в конце
+      if (ra === null) return 1;   
       if (rb === null) return -1;
-      return rb - ra;  // по убыванию (лучшие первыми)
+      return rb - ra;  
     });
   }
 
@@ -1336,7 +1334,7 @@ function createDictItem(word) {
     else selected.delete(word.id);
     saveSelected();
     item.classList.toggle('selected', cb.checked);
-    reviewQueue = []; // сбрасываем очередь при изменении выбора
+    reviewQueue = []; 
     updateDictSelectedInfo();
   });
 
@@ -1369,7 +1367,7 @@ function updateDictSelectedInfo() {
   }
 }
 
-/* ----------------- КНОПКИ СЛОВАРЯ ----------------- */
+
 document.getElementById('btn-select-all').addEventListener('click', () => {
   VOCABULARY.forEach(w => {
     if (learned.has(w.id)) selected.add(w.id);
@@ -1405,7 +1403,7 @@ function updateSortButton() {
 }
 document.getElementById('btn-sort').addEventListener('click', cycleSort);
 
-/* ----------------- ЯЗЫК / КЛАВИАТУРА ----------------- */
+
 function updateFlags() {
   document.querySelectorAll('.flag-btn').forEach(function (b) {
     const active = b.dataset.lang === currentLang;
@@ -1476,8 +1474,7 @@ function focusNoScroll(el) {
   catch (e) { el.focus(); }
 }
 
-/* While the in-app keyboard is open, block the native soft keyboard.
-   On touch devices inputs also become read-only (iOS needs this). */
+
 function applyKbInputGuard() {
   const active = keyboardOpen && kbContextOK();
   const blockNative = active && isCoarsePointer();
@@ -1649,7 +1646,7 @@ function onKeyboardToggle() {
   setKeyboardOpen(!keyboardOpen);
 }
 
-/* ----------------- МОДАЛ ----------------- */
+
 function showModal(emoji, title, translit, hebrew) {
   document.getElementById('modal-emoji').textContent = emoji;
   document.getElementById('modal-title').textContent = title;
@@ -1659,7 +1656,7 @@ function showModal(emoji, title, translit, hebrew) {
 }
 function hideModal() { document.getElementById('modal').classList.remove('show'); }
 
-/* ----------------- СБРОС ----------------- */
+
 document.getElementById('btn-reset').addEventListener('click', () => {
   if (confirm(t('resetConfirm'))) {
     learned = new Set();
@@ -1677,7 +1674,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   }
 });
 
-/* ----------------- ИНИЦИАЛИЗАЦИЯ ----------------- */
+
 buildKeyboard();
 applyLanguage();
 updateProgress();
