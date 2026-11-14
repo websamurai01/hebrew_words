@@ -297,19 +297,120 @@
     border: 1px solid rgba(45, 125, 140, .12);
     border-radius: 10px;
   }
+
+  /* ===== Язык и клавиатура в шапке ===== */
+  .header-tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .tool-btn {
+    width: 30px; height: 26px; padding: 0;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: var(--card2); color: var(--text);
+    font-size: 14px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; flex-shrink: 0;
+  }
+  .tool-btn:active { transform: scale(.94); }
+  .tool-btn.active {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(200, 101, 77, .1);
+  }
+  .lang-switch { display: flex; gap: 3px; flex-shrink: 0; }
+  .flag-btn {
+    width: 30px; height: 25px; padding: 0;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; line-height: 1;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    opacity: .42; transition: opacity .2s, box-shadow .2s, transform .15s;
+    flex-shrink: 0;
+  }
+  .flag-btn:active { transform: scale(.94); }
+  .flag-btn.active {
+    opacity: 1; border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(200, 101, 77, .2);
+  }
+  .flag-btn span { pointer-events: none; }
+
+  /* ===== Экранная клавиатура ===== */
+  body.kb-open { padding-bottom: calc(252px + env(safe-area-inset-bottom)); }
+  .keyboard {
+    position: fixed; left: 50%; bottom: 0;
+    transform: translate(-50%, 110%);
+    width: 100%; max-width: 520px; z-index: 40;
+    background: var(--card); border: 1px solid var(--border);
+    border-bottom: none; border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 30px rgba(150, 110, 60, .2);
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+    transition: transform .3s cubic-bezier(.22,1,.36,1);
+    visibility: hidden;
+  }
+  body.kb-open .keyboard { transform: translate(-50%, 0); visibility: visible; }
+  .keyboard-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2px 6px;
+  }
+  .keyboard-title {
+    font-size: 11px; font-weight: 800; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .keyboard-close {
+    background: none; border: none; color: var(--muted);
+    font-size: 15px; cursor: pointer; padding: 2px 6px; min-height: 26px;
+  }
+  .keyboard-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 5px; direction: rtl;
+  }
+  .key-btn {
+    height: 42px; border: 1px solid var(--border); border-radius: 10px;
+    background: #fffdf8; color: var(--text);
+    font-family: "Frank Ruhl Libre", "David Libre", "Noto Serif Hebrew",
+                 "Times New Roman", "DejaVu Sans", serif;
+    font-size: 22px; font-weight: 600; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .12s, background .15s, border-color .15s;
+    user-select: none;
+  }
+  .key-btn:active {
+    transform: scale(.92); background: rgba(200, 101, 77, .08);
+    border-color: var(--accent);
+  }
+  .key-btn.key-back { font-size: 18px; color: var(--muted); }
+
+  /* ===== Тост ===== */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 12px);
+    background: var(--text); color: #fff;
+    padding: 10px 18px; border-radius: 12px;
+    font-size: 13px; font-weight: 700;
+    box-shadow: 0 10px 30px rgba(60, 45, 30, .3);
+    opacity: 0; pointer-events: none; z-index: 60;
+    transition: opacity .28s, transform .28s;
+    max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  body.kb-open .toast { bottom: calc(262px + env(safe-area-inset-bottom)); }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="title">Иврит · 100 слов</div>
+  <div class="title" id="app-title" data-i18n="appTitle">Иврит · 100 слов</div>
   <div class="tabs">
-    <div class="tab active" id="tab-learn">Обучение</div>
-    <div class="tab" id="tab-review">Проверка (<span id="review-count">0</span>)</div>
+    <div class="tab active" id="tab-learn" data-i18n="tabLearn">Обучение</div>
+    <div class="tab" id="tab-review"><span data-i18n="tabReview">Проверка</span> (<span id="review-count">0</span>)</div>
   </div>
   <div class="progress-wrap">
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <div class="progress-text" id="progress-text">0 / 100</div>
+    <div class="header-tools">
+      <button class="tool-btn" id="btn-keyboard" type="button" title="Клавиатура" aria-label="Клавиатура">⌨️</button>
+      <div class="lang-switch" id="lang-switch" role="group" aria-label="Language / Язык">
+        <button class="flag-btn" type="button" data-lang="ru" title="Русский" aria-label="Русский"><span aria-hidden="true">🇷🇺</span></button>
+        <button class="flag-btn" type="button" data-lang="en" title="English" aria-label="English"><span aria-hidden="true">🇺🇸</span></button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -324,21 +425,21 @@
     <div class="cells" id="learn-cells"></div>
   </div>
   <div class="info-line error-hint" id="learn-hint"></div>
-  <div class="info-line">Введи слово по буквам справа налево</div>
+  <div class="info-line" data-i18n="learnSubtitle">Введи слово по буквам справа налево</div>
 </main>
 
 <main id="screen-review">
   <div class="subtabs">
-    <div class="subtab active" id="subtab-train">Тренировка</div>
-    <div class="subtab" id="subtab-dict">Словарь (<span id="dict-count">0</span>)</div>
+    <div class="subtab active" id="subtab-train" data-i18n="subtabTrain">Тренировка</div>
+    <div class="subtab" id="subtab-dict"><span data-i18n="dictionary">Словарь</span> (<span id="dict-count">0</span>)</div>
   </div>
 
   <!-- Тренировка -->
   <div id="review-train">
     <div class="empty" id="review-empty">
       <div class="empty-icon">📚</div>
-      <div class="empty-title">Пока нечего проверять</div>
-      <div class="empty-text">Сначала выучи хотя бы одно слово в режиме «Обучение». Затем здесь можно будет проверить свою память.</div>
+      <div class="empty-title" data-i18n="emptyReviewTitle">Пока нечего проверять</div>
+      <div class="empty-text" data-i18n="emptyReviewText">Сначала выучи хотя бы одно слово в режиме «Обучение». Затем здесь можно будет проверить свою память.</div>
     </div>
     <div id="review-content" style="display:none;">
       <div class="train-info-line" id="train-info"></div>
@@ -347,7 +448,7 @@
         <div class="en-label" id="review-en"></div>
         <input class="review-input" id="review-input" lang="he" dir="rtl" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="…">
         <div class="review-answer" id="review-answer"></div>
-        <button class="btn-primary" id="btn-check">Проверить</button>
+        <button class="btn-primary" id="btn-check" data-i18n="check">Проверить</button>
       </div>
     </div>
   </div>
@@ -356,22 +457,31 @@
   <div id="review-dict" style="display:none; flex-direction:column;">
     <div class="dict-selected-info" id="dict-selected-info"></div>
     <div class="dict-controls">
-      <button class="dict-btn" id="btn-select-all">✓ Выбрать все</button>
-      <button class="dict-btn" id="btn-select-none">✕ Снять все</button>
+      <button class="dict-btn" id="btn-select-all" data-i18n="selectAll">✓ Выбрать все</button>
+      <button class="dict-btn" id="btn-select-none" data-i18n="clearAll">✕ Снять все</button>
       <button class="dict-btn" id="btn-sort">↕️ По порядку</button>
     </div>
     <div class="dict-list" id="dict-list"></div>
     <div id="dict-empty" class="empty" style="display:none;">
       <div class="empty-icon">📖</div>
-      <div class="empty-title">Словарь пуст</div>
-      <div class="empty-text">Выучите слова в разделе «Обучение» — и они появятся здесь с статистикой ответов.</div>
+      <div class="empty-title" data-i18n="emptyDictTitle">Словарь пуст</div>
+      <div class="empty-text" data-i18n="emptyDictText">Выучите слова в разделе «Обучение» — и они появятся здесь с статистикой ответов.</div>
     </div>
   </div>
 </main>
 
 <footer>
-  <button class="reset-btn" id="btn-reset">Сбросить прогресс</button>
+  <button class="reset-btn" id="btn-reset" data-i18n="reset">Сбросить прогресс</button>
 </footer>
+
+<div class="keyboard" id="keyboard" aria-hidden="true">
+  <div class="keyboard-head">
+    <span class="keyboard-title" data-i18n="keyboardTitle">Клавиатура</span>
+    <button class="keyboard-close" id="btn-keyboard-close" type="button" aria-label="Скрыть клавиатуру">✕</button>
+  </div>
+  <div class="keyboard-grid" id="keyboard-grid" dir="rtl"></div>
+</div>
+<div class="toast" id="toast"></div>
 
 <div class="modal-hint" id="modal">
   <div class="modal-card">
@@ -490,6 +600,21 @@ const VOCABULARY = [
   { id: 100, emoji: "⬅️", en: "left (dir)", hebrew: "שמאלה", translit: "смола" }
 ];
 
+/* ----------------- Латиница для английской версии ----------------- */
+const RU_LAT = {
+  'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'yo', 'ж':'zh',
+  'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o',
+  'п':'p', 'р':'r', 'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'kh', 'ц':'ts',
+  'ч':'ch', 'ш':'sh', 'щ':'shch', 'ъ':'', 'ы':'y', 'ь':'', 'э':'e',
+  'ю':'yu', 'я':'ya'
+};
+function romanize(text) {
+  return Array.from(String(text).toLowerCase()).map(function (ch) {
+    return RU_LAT[ch] !== undefined ? RU_LAT[ch] : ch;
+  }).join('');
+}
+VOCABULARY.forEach(function (w) { w.translitEn = romanize(w.translit); });
+
 /* ----------------- Софийные буквы ----------------- */
 const SOFIYOT = { 'מ':'ם','כ':'ך','פ':'ף','נ':'ן','צ':'ץ' };
 
@@ -498,19 +623,123 @@ const LS_KEY      = 'hebrew100_learned_v2';
 const LS_STATS    = 'hebrew100_stats_v2';
 const LS_SELECTED = 'hebrew100_selected_v2';
 const LS_SORT     = 'hebrew100_sort_v2';
+const LS_LANG     = 'hebrew100_lang_v1';
+const LS_KB       = 'hebrew100_keyboard_v1';
 
 /* ----------------- Состояние ----------------- */
 let learned = new Set(loadLearned());
 let stats = loadStats();
 let selected = new Set(loadSelected().filter(id => learned.has(id)));
 let dictSort = loadSort();
+let currentLang = loadLang();
 let currentSubTab = 'train';
+let keyboardOpen = loadKeyboard();
+let toastTimer = null;
 
 let currentLearnWord = null;
 let currentCells = [];
 let correctionMode = false;
 let reviewQueue = [];
 let currentReviewWord = null;
+
+function loadLang() {
+  try { return localStorage.getItem(LS_LANG) === 'en' ? 'en' : 'ru'; }
+  catch (e) { return 'ru'; }
+}
+function saveLang() {
+  try { localStorage.setItem(LS_LANG, currentLang); } catch (e) {}
+}
+function loadKeyboard() {
+  try {
+    const raw = localStorage.getItem(LS_KB);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch (e) {}
+  return !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches);
+}
+
+/* ----------------- Локализация RU / EN ----------------- */
+const I18N = {
+  ru: {
+    appTitle: 'Иврит · 100 слов',
+    tabLearn: 'Обучение',
+    tabReview: 'Проверка',
+    subtabTrain: 'Тренировка',
+    dictionary: 'Словарь',
+    learnSubtitle: 'Введи слово по буквам справа налево',
+    check: 'Проверить',
+    emptyReviewTitle: 'Пока нечего проверять',
+    emptyReviewText: 'Сначала выучи хотя бы одно слово в режиме «Обучение». Затем здесь можно будет проверить свою память.',
+    emptyDictTitle: 'Словарь пуст',
+    emptyDictText: 'Выучите слова в разделе «Обучение» — и они появятся здесь с статистикой ответов.',
+    selectAll: '✓ Выбрать все',
+    clearAll: '✕ Снять все',
+    sortDefault: '↕️ По порядку',
+    sortWorst: '📉 Сложные ↑',
+    sortBest: '📈 Лёгкие ↑',
+    reset: 'Сбросить прогресс',
+    resetConfirm: 'Сбросить весь прогресс? Выученные слова и статистика будут удалены.',
+    learnError: 'Есть ошибки — перепиши слово целиком, правильные буквы тоже',
+    trainSelected: 'Тренируем выбранные: {n} из {m} слов',
+    trainAll: 'Тренируем все выученные: {n} слов',
+    dictAll: '🎯 Для тренировки: все ({n})',
+    dictSelected: '🎯 Для тренировки выбрано: {n} из {m}',
+    noSelectedTitle: 'Нет выбранных слов',
+    noSelectedText: 'Открой «Словарь» и выбери слова для тренировки.',
+    allLearned: 'Все 100 слов выучены!',
+    greatRepeat: 'Отлично! Повтори вслух:',
+    ttsUnavailable: 'Озвучка недоступна в этом браузере',
+    keyboardTitle: 'Клавиатура',
+    keyboardHide: 'Скрыть клавиатуру'
+  },
+  en: {
+    appTitle: 'Hebrew · 100 words',
+    tabLearn: 'Learn',
+    tabReview: 'Review',
+    subtabTrain: 'Practice',
+    dictionary: 'Dictionary',
+    learnSubtitle: 'Type the word letter by letter from right to left',
+    check: 'Check',
+    emptyReviewTitle: 'Nothing to review yet',
+    emptyReviewText: 'Learn at least one word in the “Learn” section first, then come back to test your memory.',
+    emptyDictTitle: 'Dictionary is empty',
+    emptyDictText: 'Learn words in the “Learn” section — they will appear here with answer statistics.',
+    selectAll: '✓ Select all',
+    clearAll: '✕ Clear all',
+    sortDefault: '↕️ In order',
+    sortWorst: '📉 Hardest ↑',
+    sortBest: '📈 Easiest ↑',
+    reset: 'Reset progress',
+    resetConfirm: 'Reset all progress? Learned words and statistics will be deleted.',
+    learnError: 'There are mistakes — retype the whole word, including the correct letters',
+    trainSelected: 'Practicing selected: {n} of {m} words',
+    trainAll: 'Practicing all learned words: {n}',
+    dictAll: '🎯 All words for practice ({n})',
+    dictSelected: '🎯 Selected for practice: {n} of {m}',
+    noSelectedTitle: 'No selected words',
+    noSelectedText: 'Open “Dictionary” and choose words to practice.',
+    allLearned: 'All 100 words learned!',
+    greatRepeat: 'Correct! Say it out loud:',
+    ttsUnavailable: 'Speech is not available in this browser',
+    keyboardTitle: 'Keyboard',
+    keyboardHide: 'Hide keyboard'
+  }
+};
+
+function t(key, vars) {
+  const dict = I18N[currentLang] || I18N.ru;
+  let out = dict[key] !== undefined ? dict[key] : I18N.ru[key];
+  if (out === undefined) out = key;
+  if (vars) {
+    Object.keys(vars).forEach(function (k) {
+      out = out.split('{' + k + '}').join(String(vars[k]));
+    });
+  }
+  return out;
+}
+function translitFor(word) {
+  return currentLang === 'en' ? word.translitEn : word.translit;
+}
 
 /* ----------------- Загрузка / сохранение ----------------- */
 function loadLearned() {
@@ -576,28 +805,115 @@ function rateColor(rate) {
   return 'var(--danger)';
 }
 
-/* ----------------- TTS ----------------- */
+/* ----------------- TTS (desktop / Android / iOS) ----------------- */
+let voices = [];
+let heVoice = null;
 let ruVoice = null;
-function pickRuVoice() {
+let enVoice = null;
+let anyVoice = null;
+let currentUtterance = null; // keeps the utterance alive (Chrome GC bug)
+let pendingSpeak = null;
+
+function findVoice(langRe, nameRe) {
+  return voices.find(function (v) { return langRe.test(v.lang || ''); }) ||
+         voices.find(function (v) { return nameRe.test(v.name || ''); }) || null;
+}
+function refreshVoices() {
   if (!('speechSynthesis' in window)) return;
-  const voices = speechSynthesis.getVoices();
-  ruVoice = voices.find(v => /ru/i.test(v.lang)) || voices.find(v => /russian/i.test(v.name)) || null;
+  try { voices = speechSynthesis.getVoices() || []; }
+  catch (e) { voices = []; }
+  heVoice = findVoice(/^he([-_]|$)/i, /hebrew/i);
+  ruVoice = findVoice(/^ru([-_]|$)/i, /russian/i);
+  enVoice = findVoice(/^en[-_]?us/i, /english/i) || findVoice(/^en([-_]|$)/i, /english/i);
+  anyVoice = voices.find(function (v) { return v.default; }) || voices[0] || null;
 }
 if ('speechSynthesis' in window) {
-  pickRuVoice();
-  speechSynthesis.onvoiceschanged = pickRuVoice;
+  refreshVoices();
+  if (typeof speechSynthesis.addEventListener === 'function') {
+    speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+  } else {
+    speechSynthesis.onvoiceschanged = refreshVoices;
+  }
+  // iOS/Safari only allows synthesis after a user gesture.
+  const unlockTTS = function () {
+    try { speechSynthesis.resume(); } catch (e) {}
+    refreshVoices();
+    document.removeEventListener('pointerdown', unlockTTS);
+    document.removeEventListener('touchstart', unlockTTS);
+    document.removeEventListener('keydown', unlockTTS);
+  };
+  document.addEventListener('pointerdown', unlockTTS, { passive: true });
+  document.addEventListener('touchstart', unlockTTS, { passive: true });
+  document.addEventListener('keydown', unlockTTS);
 }
-function speak(text, rate = 1) {
-  if (!('speechSynthesis' in window)) return;
+
+function showToast(text) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1900);
+}
+
+function speakText(text, lang, voice, rate) {
+  if (!('speechSynthesis' in window)) return false;
   try {
     speechSynthesis.cancel();
+    if (speechSynthesis.paused) speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ru-RU';
-    if (ruVoice) u.voice = ruVoice;
+    u.lang = lang;
+    if (voice) u.voice = voice;
     u.rate = rate;
     u.pitch = 1;
+    currentUtterance = u;
     speechSynthesis.speak(u);
-  } catch (e) {}
+    return true;
+  } catch (e) { return false; }
+}
+
+function speakWord(word, slow, isRetry) {
+  if (!word) return;
+  if (!('speechSynthesis' in window)) {
+    showToast(t('ttsUnavailable'));
+    return;
+  }
+  refreshVoices();
+  if (!voices.length) {
+    if (isRetry) { showToast(t('ttsUnavailable')); return; }
+    pendingSpeak = { word: word, slow: slow };
+    setTimeout(function () {
+      const p = pendingSpeak;
+      pendingSpeak = null;
+      if (p) speakWord(p.word, p.slow, true);
+    }, 350);
+    return;
+  }
+
+  const rate = slow ? 0.75 : 1;
+  let text, lang, voice;
+  if (heVoice) {
+    text = word.hebrew;
+    lang = 'he-IL';
+    voice = heVoice;
+  } else if (currentLang === 'ru' && ruVoice) {
+    text = word.translit;
+    lang = 'ru-RU';
+    voice = ruVoice;
+  } else if (enVoice) {
+    text = word.translitEn;
+    lang = 'en-US';
+    voice = enVoice;
+  } else if (ruVoice) {
+    text = word.translit;
+    lang = 'ru-RU';
+    voice = ruVoice;
+  } else {
+    text = word.translitEn;
+    lang = (anyVoice && anyVoice.lang) ? anyVoice.lang : 'en-US';
+    voice = anyVoice;
+  }
+  speakText(text, lang, voice, rate);
 }
 
 /* ----------------- Прогресс и табы ----------------- */
@@ -622,6 +938,7 @@ function switchTab(name) {
     document.getElementById('screen-review').classList.add('active');
     switchSubTab(currentSubTab);
   }
+  syncKeyboard();
 }
 function switchSubTab(name) {
   currentSubTab = name;
@@ -636,12 +953,21 @@ function switchSubTab(name) {
     document.getElementById('review-dict').style.display = 'flex';
     renderDictionary();
   }
+  syncKeyboard();
 }
 
 document.getElementById('tab-learn').addEventListener('click', () => switchTab('learn'));
 document.getElementById('tab-review').addEventListener('click', () => switchTab('review'));
 document.getElementById('subtab-train').addEventListener('click', () => switchSubTab('train'));
 document.getElementById('subtab-dict').addEventListener('click', () => switchSubTab('dict'));
+
+document.querySelectorAll('.flag-btn').forEach(function (b) {
+  b.addEventListener('click', function () { setLang(b.dataset.lang); });
+});
+document.getElementById('btn-keyboard').addEventListener('click', onKeyboardToggle);
+document.getElementById('btn-keyboard-close').addEventListener('click', function () {
+  setKeyboardOpen(false);
+});
 
 /* ----------------- ОБУЧЕНИЕ ----------------- */
 function renderLearnCard() {
@@ -661,8 +987,6 @@ function renderLearnCard() {
 
   buildCells(currentLearnWord.hebrew);
   updateProgress();
-
-  setTimeout(() => speak(currentLearnWord.translit, 1), 250);
 }
 
 function buildCells(hebrew) {
@@ -759,7 +1083,7 @@ function checkLearnAnswer() {
     correctionMode = false;
     setTimeout(() => {
       if (learned.size >= VOCABULARY.length) {
-        showModal('🎉', 'Все 100 слов выучены!', currentLearnWord.translit, currentLearnWord.hebrew);
+        showModal('🎉', t('allLearned'), translitFor(currentLearnWord), currentLearnWord.hebrew);
         setTimeout(() => { renderLearnCard(); }, 2500);
       } else {
         renderLearnCard();
@@ -773,7 +1097,7 @@ function checkLearnAnswer() {
     const card = document.getElementById('learn-card');
     card.classList.add('wrong');
     if (navigator.vibrate) try { navigator.vibrate(30); } catch {}
-    document.getElementById('learn-hint').textContent = 'Есть ошибки — перепиши слово целиком, правильные буквы тоже';
+    document.getElementById('learn-hint').textContent = t('learnError');
 
     const firstWrong = Math.min(...wrongIndices);
     setTimeout(() => {
@@ -786,10 +1110,10 @@ function checkLearnAnswer() {
 
 /* ----------------- АУДИО КНОПКИ ----------------- */
 document.getElementById('btn-audio-1').addEventListener('click', () => {
-  if (currentLearnWord) speak(currentLearnWord.translit, 1);
+  if (currentLearnWord) speakWord(currentLearnWord, false);
 });
 document.getElementById('btn-audio-slow').addEventListener('click', () => {
-  if (currentLearnWord) speak(currentLearnWord.translit, 0.75);
+  if (currentLearnWord) speakWord(currentLearnWord, true);
 });
 
 /* ----------------- ПРОВЕРКА (Тренировка) ----------------- */
@@ -808,7 +1132,10 @@ function buildReviewQueue() {
 function renderReview() {
   updateProgress();
   if (learned.size === 0) {
-    document.getElementById('review-empty').style.display = 'flex';
+    const box = document.getElementById('review-empty');
+    box.style.display = 'flex';
+    box.querySelector('.empty-title').textContent = t('emptyReviewTitle');
+    box.querySelector('.empty-text').textContent = t('emptyReviewText');
     document.getElementById('review-content').style.display = 'none';
     return;
   }
@@ -816,19 +1143,14 @@ function renderReview() {
   document.getElementById('review-content').style.display = 'block';
 
   // Информация о выбранном наборе
-  const infoEl = document.getElementById('train-info');
-  if (selected.size > 0) {
-    infoEl.textContent = `Тренируем выбранные: ${selected.size} из ${learned.size} слов`;
-  } else {
-    infoEl.textContent = `Тренируем все выученные: ${learned.size} слов`;
-  }
+  updateTrainInfo();
 
   if (reviewQueue.length === 0) reviewQueue = buildReviewQueue();
   if (reviewQueue.length === 0) {
     // выбранные слова не входят в выученные
     document.getElementById('review-empty').style.display = 'flex';
-    document.getElementById('review-empty').querySelector('.empty-title').textContent = 'Нет выбранных слов';
-    document.getElementById('review-empty').querySelector('.empty-text').textContent = 'Открой «Словарь» и выбери слова для тренировки.';
+    document.getElementById('review-empty').querySelector('.empty-title').textContent = t('noSelectedTitle');
+    document.getElementById('review-empty').querySelector('.empty-text').textContent = t('noSelectedText');
     document.getElementById('review-content').style.display = 'none';
     return;
   }
@@ -860,11 +1182,11 @@ function checkReviewAnswer() {
   }
   if (normalized === currentReviewWord.hebrew) {
     recordResult(currentReviewWord.id, true);
-    speak(currentReviewWord.translit, 1);
+    speakWord(currentReviewWord, false);
     const card = document.getElementById('review-card');
     card.classList.add('correct');
     if (navigator.vibrate) try { navigator.vibrate(50); } catch {}
-    showModal('🎉', 'Отлично! Повтори вслух:', currentReviewWord.translit, currentReviewWord.hebrew);
+    showModal('🎉', t('greatRepeat'), translitFor(currentReviewWord), currentReviewWord.hebrew);
     setTimeout(() => { hideModal(); renderReview(); }, 1500);
   } else {
     recordResult(currentReviewWord.id, false);
@@ -903,12 +1225,7 @@ function renderDictionary() {
   document.querySelector('.dict-controls').style.display = '';
 
   // Информация о выборе
-  const infoEl = document.getElementById('dict-selected-info');
-  if (selected.size === 0) {
-    infoEl.textContent = `🎯 Для тренировки: все (${learnedList.length})`;
-  } else {
-    infoEl.textContent = `🎯 Для тренировки выбрано: ${selected.size} из ${learnedList.length}`;
-  }
+  updateDictSelectedInfo();
 
   // Сортировка
   const sorted = [...learnedList];
@@ -973,11 +1290,11 @@ function createDictItem(word) {
   hebrewEl.textContent = word.hebrew;
   const translitEl = document.createElement('div');
   translitEl.className = 'dict-translit';
-  translitEl.innerHTML = `${word.translit} <span class="dict-speak">🔊</span>`;
+  translitEl.innerHTML = `${translitFor(word)} <span class="dict-speak">🔊</span>`;
   translitEl.addEventListener('click', (e) => {
     e.stopPropagation();
     e.preventDefault();
-    speak(word.translit, 1);
+    speakWord(word, false);
   });
   const enEl = document.createElement('div');
   enEl.className = 'dict-en';
@@ -1024,14 +1341,25 @@ function createDictItem(word) {
   return item;
 }
 
+function updateTrainInfo() {
+  const infoEl = document.getElementById('train-info');
+  if (!infoEl) return;
+  if (learned.size === 0) { infoEl.textContent = ''; return; }
+  if (selected.size > 0) {
+    infoEl.textContent = t('trainSelected', { n: selected.size, m: learned.size });
+  } else {
+    infoEl.textContent = t('trainAll', { n: learned.size });
+  }
+}
+
 function updateDictSelectedInfo() {
   const learnedList = VOCABULARY.filter(w => learned.has(w.id));
   if (learnedList.length === 0) return;
   const infoEl = document.getElementById('dict-selected-info');
   if (selected.size === 0) {
-    infoEl.textContent = `🎯 Для тренировки: все (${learnedList.length})`;
+    infoEl.textContent = t('dictAll', { n: learnedList.length });
   } else {
-    infoEl.textContent = `🎯 Для тренировки выбрано: ${selected.size} из ${learnedList.length}`;
+    infoEl.textContent = t('dictSelected', { n: selected.size, m: learnedList.length });
   }
 }
 
@@ -1062,14 +1390,205 @@ function cycleSort() {
 function updateSortButton() {
   const btn = document.getElementById('btn-sort');
   const labels = {
-    'default': '↕️ По порядку',
-    'worst':   '📉 Сложные ↑',
-    'best':    '📈 Лёгкие ↑'
+    'default': t('sortDefault'),
+    'worst':   t('sortWorst'),
+    'best':    t('sortBest')
   };
   btn.textContent = labels[dictSort];
   btn.classList.toggle('active-sort', dictSort !== 'default');
 }
 document.getElementById('btn-sort').addEventListener('click', cycleSort);
+
+/* ----------------- ЯЗЫК / КЛАВИАТУРА ----------------- */
+function updateFlags() {
+  document.querySelectorAll('.flag-btn').forEach(function (b) {
+    const active = b.dataset.lang === currentLang;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function applyLanguage() {
+  document.documentElement.lang = currentLang;
+  document.title = t('appTitle');
+  document.querySelectorAll('[data-i18n]').forEach(function (el) {
+    el.textContent = t(el.dataset.i18n);
+  });
+  updateFlags();
+  updateProgress();
+  updateSortButton();
+  updateTrainInfo();
+  updateDictSelectedInfo();
+
+  const kbBtn = document.getElementById('btn-keyboard');
+  if (kbBtn) {
+    kbBtn.title = t('keyboardTitle');
+    kbBtn.setAttribute('aria-label', t('keyboardTitle'));
+  }
+  const kbClose = document.getElementById('btn-keyboard-close');
+  if (kbClose) kbClose.setAttribute('aria-label', t('keyboardHide'));
+
+  const hint = document.getElementById('learn-hint');
+  if (hint) hint.textContent = '';
+
+  const reviewEmpty = document.getElementById('review-empty');
+  if (reviewEmpty && reviewEmpty.style.display !== 'none') {
+    const title = reviewEmpty.querySelector('.empty-title');
+    const text = reviewEmpty.querySelector('.empty-text');
+    if (learned.size === 0) {
+      title.textContent = t('emptyReviewTitle');
+      text.textContent = t('emptyReviewText');
+    } else {
+      title.textContent = t('noSelectedTitle');
+      text.textContent = t('noSelectedText');
+    }
+  }
+
+  const dict = document.getElementById('review-dict');
+  if (dict && dict.style.display !== 'none') renderDictionary();
+}
+
+function setLang(code) {
+  if (currentLang === code) return;
+  currentLang = code;
+  saveLang();
+  hideModal();
+  applyLanguage();
+}
+
+const HE_KEYS = ['א','ב','ג','ד','ה','ו','ז','ח','ט','י',
+                 'כ','ך','ל','מ','ם','נ','ן','ס','ע','פ',
+                 'ף','צ','ץ','ק','ר','ש','ת'];
+
+function buildKeyboard() {
+  const grid = document.getElementById('keyboard-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  HE_KEYS.forEach(function (ch) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'key-btn';
+    b.textContent = ch;
+    b.setAttribute('aria-label', ch);
+    b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    b.addEventListener('click', function () { kbInsert(ch); });
+    grid.appendChild(b);
+  });
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'key-btn key-back';
+  back.textContent = '⌫';
+  back.setAttribute('aria-label', 'Backspace');
+  back.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  back.addEventListener('click', kbBackspace);
+  grid.appendChild(back);
+}
+
+function kbContextOK() {
+  const learnActive = document.getElementById('screen-learn').classList.contains('active');
+  const reviewActive = document.getElementById('screen-review').classList.contains('active');
+  const trainBox = document.getElementById('review-train');
+  const trainVisible = trainBox && trainBox.style.display !== 'none';
+  return learnActive || (reviewActive && currentSubTab === 'train' && trainVisible);
+}
+
+function kbTarget() {
+  const active = document.activeElement;
+  const learnActive = document.getElementById('screen-learn').classList.contains('active');
+  if (active && active.classList && active.classList.contains('cell') && learnActive) {
+    return active;
+  }
+
+  const reviewInputEl = document.getElementById('review-input');
+  const reviewContent = document.getElementById('review-content');
+  if (document.getElementById('screen-review').classList.contains('active') &&
+      currentSubTab === 'train' &&
+      reviewContent && reviewContent.style.display !== 'none') {
+    return reviewInputEl;
+  }
+
+  if (document.getElementById('screen-learn').classList.contains('active')) {
+    if (currentCells.length) {
+      return currentCells.find(function (c) { return !c.value; }) || null;
+    }
+  }
+  return null;
+}
+
+function focusEnd(input) {
+  try { input.focus({ preventScroll: true }); }
+  catch (e) { input.focus(); }
+  const len = input.value.length;
+  try { input.setSelectionRange(len, len); } catch (e) {}
+}
+
+function kbInsert(ch) {
+  const target = kbTarget();
+  if (!target) return;
+  if (target.classList.contains('cell')) {
+    target.focus();
+    target.value = ch;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  } else {
+    target.value = (target.value || '') + ch;
+    focusEnd(target);
+  }
+}
+
+function kbBackspace() {
+  const target = kbTarget();
+  if (!target) return;
+  if (target.classList.contains('cell')) {
+    target.focus();
+    if (target.value) {
+      target.value = '';
+      target.classList.remove('wrong-cell', 'shake');
+    } else {
+      const idx = currentCells.indexOf(target);
+      if (idx > 0) {
+        const prev = currentCells[idx - 1];
+        prev.value = '';
+        prev.classList.remove('wrong-cell', 'shake');
+        prev.focus();
+      }
+    }
+  } else {
+    target.value = Array.from(target.value || '').slice(0, -1).join('');
+    focusEnd(target);
+  }
+}
+
+function syncKeyboard() {
+  const show = keyboardOpen && kbContextOK();
+  document.body.classList.toggle('kb-open', show);
+  const kb = document.getElementById('keyboard');
+  if (kb) kb.setAttribute('aria-hidden', show ? 'false' : 'true');
+  const btn = document.getElementById('btn-keyboard');
+  if (btn) btn.classList.toggle('active', show);
+}
+
+function setKeyboardOpen(open) {
+  keyboardOpen = open;
+  try { localStorage.setItem(LS_KB, open ? '1' : '0'); } catch (e) {}
+  syncKeyboard();
+  if (open && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+    const target = kbTarget();
+    if (target) target.focus();
+  }
+}
+
+function onKeyboardToggle() {
+  if (!kbContextOK()) {
+    if (document.getElementById('screen-review').classList.contains('active')) {
+      switchSubTab('train');
+    } else {
+      switchTab('learn');
+    }
+    setKeyboardOpen(true);
+    return;
+  }
+  setKeyboardOpen(!keyboardOpen);
+}
 
 /* ----------------- МОДАЛ ----------------- */
 function showModal(emoji, title, translit, hebrew) {
@@ -1083,7 +1602,7 @@ function hideModal() { document.getElementById('modal').classList.remove('show')
 
 /* ----------------- СБРОС ----------------- */
 document.getElementById('btn-reset').addEventListener('click', () => {
-  if (confirm('Сбросить весь прогресс? Выученные слова и статистика будут удалены.')) {
+  if (confirm(t('resetConfirm'))) {
     learned = new Set();
     stats = {};
     selected = new Set();
@@ -1100,9 +1619,11 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 });
 
 /* ----------------- ИНИЦИАЛИЗАЦИЯ ----------------- */
+buildKeyboard();
+applyLanguage();
 updateProgress();
 renderLearnCard();
-if ('speechSynthesis' in window) setTimeout(pickRuVoice, 300);
+syncKeyboard();
 
 let lastTouchEnd = 0;
 document.addEventListener('touchend', (e) => {
