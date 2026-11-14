@@ -7,21 +7,78 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Иврит 100 слов</title>
+<script>
+(function(){var t=null;try{t=localStorage.getItem('hebrew_theme_v1');}catch(e){}if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();
+</script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
+    color-scheme: light;
     --bg: #f5ede0;
     --bg2: #efe4d2;
+    --bg-glow: #fff6e8;
+    --header-bg: rgba(245, 237, 224, .92);
     --card: #fffaf3;
     --card2: #faf3e7;
+    --input-bg: #fffdf8;
+    --input-focus: #ffffff;
     --accent: #c8654d;
+    --accent-btn: #c8654d;
+    --accent-grad: #e08a5e;
     --accent2: #2d7d8c;
     --olive: #6b8e4e;
     --danger: #b3412e;
     --text: #3d3528;
     --muted: #8a7d68;
+    --faint: #b3a48a;
+    --label-text: #6a5a45;
     --border: #e2d4bd;
+    --toast-bg: #3d3528;
+    --toast-text: #ffffff;
+    --overlay: rgba(60, 45, 30, .55);
+    --emoji-filter: drop-shadow(0 6px 18px rgba(150, 110, 60, .25));
     --shadow: 0 8px 28px rgba(150, 110, 60, .14);
+    --shadow-soft: 0 4px 14px rgba(150, 110, 60, .07);
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #16120f;
+    --bg2: #1d1813;
+    --bg-glow: #2a2119;
+    --header-bg: rgba(22, 18, 15, .92);
+    --card: #241e18;
+    --card2: #2d251d;
+    --input-bg: #1b1611;
+    --input-focus: #292219;
+    --accent: #e08a6a;
+    --accent-btn: #b15c43;
+    --accent-grad: #cf7354;
+    --accent2: #6fb8c2;
+    --olive: #9cbf72;
+    --danger: #e0755e;
+    --text: #efe4d3;
+    --muted: #a99a84;
+    --faint: #7f7260;
+    --label-text: #e5d6c1;
+    --border: #483b2d;
+    --toast-bg: #efe4d3;
+    --toast-text: #1a1510;
+    --overlay: rgba(0, 0, 0, .65);
+    --emoji-filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .5));
+    --shadow: 0 8px 28px rgba(0, 0, 0, .45);
+    --shadow-soft: 0 4px 14px rgba(0, 0, 0, .3);
+  }
+  html[data-theme="dark"] .flag-btn.active {
+    box-shadow: 0 0 0 2px rgba(224, 138, 106, .3);
+  }
+  html[data-theme="dark"] .dict-item.selected {
+    background: rgba(156, 191, 114, .08);
+  }
+  html[data-theme="dark"] .cell.wrong-cell {
+    background: rgba(224, 117, 94, .14);
+  }
+  html[data-theme="dark"] .key-btn:active {
+    background: rgba(224, 138, 106, .12);
   }
   html, body {
     margin: 0; padding: 0;
@@ -35,12 +92,12 @@
   body {
     display: flex; flex-direction: column;
     max-width: 520px; margin: 0 auto;
-    background: radial-gradient(120% 60% at 50% 0%, #fff6e8 0%, var(--bg) 55%, var(--bg2) 100%);
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg-glow) 0%, var(--bg) 55%, var(--bg2) 100%);
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   header {
     position: sticky; top: 0; z-index: 10;
-    background: rgba(245, 237, 224, 0.92);
+    background: var(--header-bg);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     padding: 12px 14px 10px;
@@ -63,7 +120,7 @@
     user-select: none;
   }
   .tab.active {
-    background: linear-gradient(135deg, var(--accent), #e08a5e);
+    background: linear-gradient(135deg, var(--accent-btn), var(--accent-grad));
     color: #fff; box-shadow: 0 4px 14px rgba(200, 101, 77, .3);
   }
   .progress-wrap { display: flex; align-items: center; gap: 10px; }
@@ -103,11 +160,11 @@
   }
   .emoji {
     font-size: 76px; line-height: 1; margin-bottom: 14px;
-    filter: drop-shadow(0 6px 18px rgba(150, 110, 60, .25));
+    filter: var(--emoji-filter);
   }
   .en-label {
     background: rgba(200, 101, 77, .08); border: 1px solid var(--border);
-    color: #6a5a45; padding: 7px 16px; border-radius: 999px;
+    color: var(--label-text); padding: 7px 16px; border-radius: 999px;
     font-size: 15px; font-weight: 600; margin-bottom: 20px; max-width: 100%;
   }
   .audio-row { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -119,7 +176,7 @@
     transition: transform .15s, background .2s, border-color .2s;
   }
   .audio-btn:active { transform: scale(.94); }
-  .audio-btn:hover { border-color: var(--accent); background: #fff; }
+  .audio-btn:hover { border-color: var(--accent); background: var(--input-focus); }
   .cells {
     display: flex; flex-direction: row-reverse; gap: 8px;
     flex-wrap: wrap; justify-content: center; margin-bottom: 6px;
@@ -127,13 +184,13 @@
   .cell {
     width: 50px; height: 62px; text-align: center;
     font-size: 28px; font-weight: 700; color: var(--text);
-    background: #fffdf8; border: 2px solid var(--border);
+    background: var(--input-bg); border: 2px solid var(--border);
     border-radius: 13px; padding: 0; outline: none;
     transition: all .2s; caret-color: var(--accent);
   }
   .cell:focus {
     border-color: var(--accent2);
-    box-shadow: 0 0 0 3px rgba(45, 125, 140, .25); background: #fff;
+    box-shadow: 0 0 0 3px rgba(45, 125, 140, .25); background: var(--input-focus);
   }
   .cell.wrong-cell {
     border-color: var(--danger);
@@ -150,10 +207,11 @@
   }
   .review-input {
     width: 100%; text-align: center; font-size: 28px; font-weight: 700;
-    padding: 14px; background: #fffdf8; border: 2px solid var(--border);
+    padding: 14px; background: var(--input-bg); border: 2px solid var(--border);
     border-radius: 14px; color: var(--text); direction: rtl; outline: none;
     transition: all .2s; caret-color: var(--accent);
   }
+  .review-input::placeholder { color: var(--muted); opacity: .75; }
   .review-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(45,125,140,.2); }
   .review-input.shake { animation: shake .45s; border-color: var(--danger); }
   .review-answer {
@@ -161,14 +219,14 @@
     direction: rtl; min-height: 28px;
   }
   .btn-primary {
-    width: 100%; background: linear-gradient(135deg, var(--accent), #e08a5e);
+    width: 100%; background: linear-gradient(135deg, var(--accent-btn), var(--accent-grad));
     color: #fff; border: none; border-radius: 16px; padding: 16px;
     font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 18px;
     min-height: 52px; transition: transform .15s; box-shadow: 0 6px 20px rgba(200, 101, 77, .3);
   }
   .btn-primary:active { transform: scale(.97); }
   .modal-hint {
-    position: fixed; inset: 0; background: rgba(60, 45, 30, .55);
+    position: fixed; inset: 0; background: var(--overlay);
     display: none; align-items: center; justify-content: center;
     z-index: 50; padding: 20px; backdrop-filter: blur(4px);
   }
@@ -197,7 +255,7 @@
   .empty-text { font-size: 14px; line-height: 1.6; }
   footer { padding: 14px; text-align: center; }
   .reset-btn {
-    background: none; border: none; color: #b3a48a;
+    background: none; border: none; color: var(--faint);
     font-size: 12px; cursor: pointer; padding: 8px 14px; min-height: 36px;
   }
   .info-line {
@@ -244,7 +302,7 @@
     transition: all .2s; min-height: 42px;
   }
   .dict-btn:active { transform: scale(.95); }
-  .dict-btn:hover { border-color: var(--accent2); background: #fff; }
+  .dict-btn:hover { border-color: var(--accent2); background: var(--input-focus); }
   .dict-btn.active-sort { border-color: var(--accent); color: var(--accent); background: rgba(200,101,77,.08); }
 
   .dict-list { display: flex; flex-direction: column; gap: 7px; }
@@ -317,7 +375,7 @@
   .flag-btn {
     width: 30px; height: 25px; padding: 0;
     border: 1px solid var(--border); border-radius: 6px;
-    background: #fff; cursor: pointer;
+    background: var(--card); cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; line-height: 1;
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
@@ -339,7 +397,7 @@
     width: 100%; max-width: 520px; z-index: 40;
     background: var(--card); border: 1px solid var(--border);
     border-bottom: none; border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 30px rgba(150, 110, 60, .2);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, .22);
     padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
     transition: transform .3s cubic-bezier(.22,1,.36,1);
     visibility: hidden;
@@ -363,7 +421,7 @@
   }
   .key-btn {
     height: 42px; border: 1px solid var(--border); border-radius: 10px;
-    background: #fffdf8; color: var(--text);
+    background: var(--input-bg); color: var(--text);
     font-family: "Frank Ruhl Libre", "David Libre", "Noto Serif Hebrew",
                  "Times New Roman", "DejaVu Sans", serif;
     font-size: 22px; font-weight: 600; line-height: 1; cursor: pointer;
@@ -381,10 +439,10 @@
   .toast {
     position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
     transform: translate(-50%, 12px);
-    background: var(--text); color: #fff;
+    background: var(--toast-bg); color: var(--toast-text);
     padding: 10px 18px; border-radius: 12px;
     font-size: 13px; font-weight: 700;
-    box-shadow: 0 10px 30px rgba(60, 45, 30, .3);
+    box-shadow: var(--shadow);
     opacity: 0; pointer-events: none; z-index: 60;
     transition: opacity .28s, transform .28s;
     max-width: 90vw; text-align: center;
@@ -405,6 +463,7 @@
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <div class="progress-text" id="progress-text">0 / 100</div>
     <div class="header-tools">
+      <button class="tool-btn" id="btn-theme" type="button" title="Тёмная тема" aria-label="Тёмная тема">🌙</button>
       <button class="tool-btn" id="btn-keyboard" type="button" title="Клавиатура" aria-label="Клавиатура">⌨️</button>
       <div class="lang-switch" id="lang-switch" role="group" aria-label="Language / Язык">
         <button class="flag-btn" type="button" data-lang="ru" title="Русский" aria-label="Русский"><span aria-hidden="true">🇷🇺</span></button>
@@ -623,6 +682,7 @@ const LS_SELECTED = 'hebrew100_selected_v2';
 const LS_SORT     = 'hebrew100_sort_v2';
 const LS_LANG     = 'hebrew100_lang_v1';
 const LS_KB       = 'hebrew100_keyboard_v1';
+const LS_THEME    = 'hebrew_theme_v1';
 
 
 let learned = new Set(loadLearned());
@@ -630,6 +690,7 @@ let stats = loadStats();
 let selected = new Set(loadSelected().filter(id => learned.has(id)));
 let dictSort = loadSort();
 let currentLang = loadLang();
+let currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 let currentSubTab = 'train';
 let keyboardOpen = loadKeyboard();
 let toastTimer = null;
@@ -688,7 +749,9 @@ const I18N = {
     greatRepeat: 'Отлично! Повтори вслух:',
     ttsUnavailable: 'Озвучка недоступна в этом браузере',
     keyboardTitle: 'Клавиатура',
-    keyboardHide: 'Скрыть клавиатуру'
+    keyboardHide: 'Скрыть клавиатуру',
+    themeDark: 'Тёмная тема',
+    themeLight: 'Светлая тема'
   },
   en: {
     appTitle: 'Hebrew · 100 words',
@@ -720,7 +783,9 @@ const I18N = {
     greatRepeat: 'Correct! Say it out loud:',
     ttsUnavailable: 'Speech is not available in this browser',
     keyboardTitle: 'Keyboard',
-    keyboardHide: 'Hide keyboard'
+    keyboardHide: 'Hide keyboard',
+    themeDark: 'Dark theme',
+    themeLight: 'Light theme'
   }
 };
 
@@ -962,6 +1027,7 @@ document.getElementById('subtab-dict').addEventListener('click', () => switchSub
 document.querySelectorAll('.flag-btn').forEach(function (b) {
   b.addEventListener('click', function () { setLang(b.dataset.lang); });
 });
+document.getElementById('btn-theme').addEventListener('click', toggleTheme);
 document.getElementById('btn-keyboard').addEventListener('click', onKeyboardToggle);
 document.getElementById('btn-keyboard-close').addEventListener('click', function () {
   setKeyboardOpen(false);
@@ -1404,6 +1470,31 @@ function updateSortButton() {
 document.getElementById('btn-sort').addEventListener('click', cycleSort);
 
 
+function updateThemeButton() {
+  const btn = document.getElementById('btn-theme');
+  if (!btn) return;
+  const dark = currentTheme === 'dark';
+  btn.textContent = dark ? '☀️' : '🌙';
+  const label = t(dark ? 'themeLight' : 'themeDark');
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+}
+
+function applyTheme(theme, persist) {
+  currentTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', currentTheme === 'dark' ? '#16120f' : '#f5ede0');
+  if (persist) {
+    try { localStorage.setItem(LS_THEME, currentTheme); } catch (e) {}
+  }
+  updateThemeButton();
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
+}
+
 function updateFlags() {
   document.querySelectorAll('.flag-btn').forEach(function (b) {
     const active = b.dataset.lang === currentLang;
@@ -1419,6 +1510,7 @@ function applyLanguage() {
     el.textContent = t(el.dataset.i18n);
   });
   updateFlags();
+  updateThemeButton();
   updateProgress();
   updateSortButton();
   updateTrainInfo();
@@ -1675,6 +1767,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 });
 
 
+applyTheme(currentTheme, false);
 buildKeyboard();
 applyLanguage();
 updateProgress();
