@@ -7,6 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Иврит 100 слов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gveret+Levin&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew&display=swap">
 <script>
 (function(){var t=null;try{t=localStorage.getItem('hebrew_theme_v1');}catch(e){}if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();
 </script>
@@ -39,6 +44,9 @@
     --emoji-filter: drop-shadow(0 6px 18px rgba(150, 110, 60, .25));
     --shadow: 0 8px 28px rgba(150, 110, 60, .14);
     --shadow-soft: 0 4px 14px rgba(150, 110, 60, .07);
+    --hebrew: "Noto Serif Hebrew", "Frank Ruhl Libre", "David Libre", "Noto Sans Hebrew",
+              "Times New Roman", "DejaVu Sans", serif;
+    --hebrew-cursive: "Gveret Levin", var(--hebrew);
   }
   html[data-theme="dark"] {
     color-scheme: dark;
@@ -286,6 +294,21 @@
   }
 
   
+  .pos-filter {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .pos-chip {
+    flex: 1 1 auto; background: var(--card2); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 999px; padding: 8px 10px;
+    font-size: 11px; font-weight: 700; cursor: pointer; min-height: 36px;
+    transition: all .2s; white-space: nowrap;
+  }
+  .pos-chip:active { transform: scale(.96); }
+  .pos-chip.active {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(200, 101, 77, .08);
+  }
+
   .dict-selected-info {
     text-align: center; font-size: 12px; font-weight: 700; color: var(--accent2);
     padding: 9px 12px; background: rgba(45, 125, 140, .07);
@@ -449,6 +472,38 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   body.kb-open .toast { bottom: calc(262px + env(safe-area-inset-bottom)); }
+
+  
+  html.hide-emoji #learn-emoji,
+  html.hide-emoji #review-emoji,
+  html.hide-emoji .dict-emoji { display: none; }
+
+  
+  .review-hebrew-prompt {
+    font-family: var(--hebrew);
+    font-size: clamp(44px, 14vw, 64px);
+    line-height: 1.45;
+    font-weight: 700;
+    color: var(--text);
+    direction: rtl;
+    margin-bottom: 18px;
+    padding: 4px 8px;
+    user-select: none;
+  }
+  .review-hebrew-prompt.is-cursive {
+    font-family: var(--hebrew-cursive);
+    line-height: 1.55;
+  }
+  .review-hebrew-prompt.is-nikud {
+    line-height: 1.6;
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+  .review-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .rev-mode-bar, .rev-script-bar {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .rev-mode-bar .pos-chip, .rev-script-bar .pos-chip { flex: 1 1 auto; }
 </style>
 </head>
 <body>
@@ -465,6 +520,7 @@
     <div class="header-tools">
       <button class="tool-btn" id="btn-theme" type="button" title="Тёмная тема" aria-label="Тёмная тема">🌙</button>
       <button class="tool-btn" id="btn-keyboard" type="button" title="Клавиатура" aria-label="Клавиатура">⌨️</button>
+      <button class="tool-btn" id="btn-emoji" type="button" title="Эмодзи" aria-label="Эмодзи">🖼️</button>
       <div class="lang-switch" id="lang-switch" role="group" aria-label="Language / Язык">
         <button class="flag-btn" type="button" data-lang="ru" title="Русский" aria-label="Русский"><span aria-hidden="true">🇷🇺</span></button>
         <button class="flag-btn" type="button" data-lang="en" title="English" aria-label="English"><span aria-hidden="true">🇺🇸</span></button>
@@ -474,6 +530,7 @@
 </header>
 
 <main id="screen-learn" class="active">
+  <div class="pos-filter" id="pos-filter-learn"></div>
   <div class="card" id="learn-card">
     <div class="emoji" id="learn-emoji"></div>
     <div class="en-label" id="learn-en"></div>
@@ -482,6 +539,12 @@
       <button class="audio-btn" id="btn-audio-slow">🐢 0.75x</button>
     </div>
     <div class="cells" id="learn-cells"></div>
+  </div>
+  <div class="empty" id="learn-empty" style="display:none;">
+    <div class="empty-icon">🎉</div>
+    <div class="empty-title" data-i18n="allCategoryTitle">Категория выучена</div>
+    <div class="empty-text" data-i18n="allCategoryText">Все слова этой категории выучены. Смените фильтр или сбросьте его.</div>
+    <button class="btn-primary" id="btn-learn-reset-filter" data-i18n="resetFilter" style="max-width:260px;">Сбросить фильтр</button>
   </div>
   <div class="info-line error-hint" id="learn-hint"></div>
   <div class="info-line" data-i18n="learnSubtitle">Введи слово по буквам справа налево</div>
@@ -495,25 +558,39 @@
 
   
   <div id="review-train">
+    <div class="pos-filter" id="pos-filter-train"></div>
+    <div class="rev-mode-bar" id="rev-mode-bar">
+      <button class="pos-chip active" id="btn-dir-normal" type="button" data-i18n="dirNormal">Перевод → Иврит</button>
+      <button class="pos-chip" id="btn-dir-reverse" type="button" data-i18n="dirReverse">Иврит → Перевод</button>
+    </div>
+    <div class="rev-script-bar" id="rev-script-bar" style="display:none;">
+      <button class="pos-chip active" id="btn-script-plain" type="button" data-i18n="scriptPlain">Обычный</button>
+      <button class="pos-chip" id="btn-script-nikud" type="button" data-i18n="scriptNikud">Никуд</button>
+      <button class="pos-chip" id="btn-script-cursive" type="button" data-i18n="scriptCursive">Прописной</button>
+    </div>
     <div class="empty" id="review-empty">
       <div class="empty-icon">📚</div>
       <div class="empty-title" data-i18n="emptyReviewTitle">Пока нечего проверять</div>
       <div class="empty-text" data-i18n="emptyReviewText">Сначала выучи хотя бы одно слово в режиме «Обучение». Затем здесь можно будет проверить свою память.</div>
+      <button class="btn-primary" id="btn-train-reset-filter" data-i18n="resetFilter" style="display:none; max-width:260px;">Сбросить фильтр</button>
     </div>
     <div id="review-content" style="display:none;">
       <div class="train-info-line" id="train-info"></div>
       <div class="card" id="review-card">
         <div class="emoji" id="review-emoji"></div>
         <div class="en-label" id="review-en"></div>
+        <div class="review-hebrew-prompt" id="review-hebrew-prompt" dir="rtl" lang="he" style="display:none;"></div>
         <input class="review-input" id="review-input" lang="he" dir="rtl" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="…">
         <div class="review-answer" id="review-answer"></div>
         <button class="btn-primary" id="btn-check" data-i18n="check">Проверить</button>
+        <button class="audio-btn" id="btn-review-show" type="button" data-i18n="showAnswer" style="display:none; margin-top:10px; justify-content:center;">Показать ответ</button>
       </div>
     </div>
   </div>
 
   
   <div id="review-dict" style="display:none; flex-direction:column;">
+    <div class="pos-filter" id="pos-filter-dict"></div>
     <div class="dict-selected-info" id="dict-selected-info"></div>
     <div class="dict-controls">
       <button class="dict-btn" id="btn-select-all" data-i18n="selectAll">✓ Выбрать все</button>
@@ -525,6 +602,7 @@
       <div class="empty-icon">📖</div>
       <div class="empty-title" data-i18n="emptyDictTitle">Словарь пуст</div>
       <div class="empty-text" data-i18n="emptyDictText">Выучите слова в разделе «Обучение» — и они появятся здесь с статистикой ответов.</div>
+      <button class="btn-primary" id="btn-dict-reset-filter" data-i18n="resetFilter" style="display:none; max-width:260px;">Сбросить фильтр</button>
     </div>
   </div>
 </main>
@@ -555,106 +633,106 @@
 
 
 const VOCABULARY = [
-  { id: 1, emoji: "👋", en: "hello / peace", hebrew: "שלום", translit: "шалом" },
-  { id: 2, emoji: "🙏", en: "thank you", hebrew: "תודה", translit: "тода" },
-  { id: 3, emoji: "🤲", en: "please / welcome", hebrew: "בבקשה", translit: "бевакаша" },
-  { id: 4, emoji: "🙇", en: "sorry / excuse me", hebrew: "סליחה", translit: "слиха" },
-  { id: 5, emoji: "👌", en: "okay / fine", hebrew: "בסדר", translit: "беседер" },
-  { id: 6, emoji: "✅", en: "yes", hebrew: "כן", translit: "кен" },
-  { id: 7, emoji: "❌", en: "no / not", hebrew: "לא", translit: "ло" },
-  { id: 8, emoji: "🤷", en: "maybe", hebrew: "אולי", translit: "улай" },
-  { id: 9, emoji: "📦", en: "there is / have", hebrew: "יש", translit: "еш" },
-  { id: 10, emoji: "🕳️", en: "there isn't / none", hebrew: "אין", translit: "эйн" },
-  { id: 11, emoji: "➕", en: "also / too", hebrew: "גם", translit: "гам" },
-  { id: 12, emoji: "👈", en: "I / me", hebrew: "אני", translit: "ани" },
-  { id: 13, emoji: "👉👨", en: "you (m)", hebrew: "אתה", translit: "ата" },
-  { id: 14, emoji: "👉👩", en: "you (f)", hebrew: "את", translit: "ат" },
-  { id: 15, emoji: "👨", en: "he", hebrew: "הוא", translit: "ху" },
-  { id: 16, emoji: "👩", en: "she", hebrew: "היא", translit: "хи" },
-  { id: 17, emoji: "👥", en: "we", hebrew: "אנחנו", translit: "анахну" },
-  { id: 18, emoji: "👉👥", en: "you (plural)", hebrew: "אתם", translit: "атем" },
-  { id: 19, emoji: "👥👥", en: "they", hebrew: "הם", translit: "хем" },
-  { id: 20, emoji: "❓", en: "what", hebrew: "מה", translit: "ма" },
-  { id: 21, emoji: "🕵️", en: "who", hebrew: "מי", translit: "ми" },
-  { id: 22, emoji: "📍❓", en: "where", hebrew: "איפה", translit: "эйфо" },
-  { id: 23, emoji: "⏰❓", en: "when", hebrew: "מתי", translit: "матай" },
-  { id: 24, emoji: "🤔❓", en: "why", hebrew: "למה", translit: "лама" },
-  { id: 25, emoji: "⚙️❓", en: "how", hebrew: "איך", translit: "эйх" },
-  { id: 26, emoji: "🔢❓", en: "how much / many", hebrew: "כמה", translit: "кама" },
-  { id: 27, emoji: "⏱️", en: "now", hebrew: "עכשיו", translit: "ахшав" },
-  { id: 28, emoji: "📅", en: "today", hebrew: "היום", translit: "хайом" },
-  { id: 29, emoji: "🌅", en: "tomorrow", hebrew: "מחר", translit: "махар" },
-  { id: 30, emoji: "🌇", en: "yesterday", hebrew: "אתמול", translit: "этмоль" },
-  { id: 31, emoji: "☀️", en: "day", hebrew: "יום", translit: "йом" },
-  { id: 32, emoji: "🌙", en: "night", hebrew: "לילה", translit: "лайла" },
-  { id: 33, emoji: "☕🌅", en: "morning", hebrew: "בוקר", translit: "бокер" },
-  { id: 34, emoji: "🌆", en: "evening", hebrew: "ערב", translit: "эрев" },
-  { id: 35, emoji: "⏳", en: "time", hebrew: "זמן", translit: "зман" },
-  { id: 36, emoji: "💭", en: "want (m)", hebrew: "רוצה", translit: "роце" },
-  { id: 37, emoji: "❤️", en: "love / like (m)", hebrew: "אוהב", translit: "охев" },
-  { id: 38, emoji: "💡", en: "know (m)", hebrew: "יודע", translit: "йодеа" },
-  { id: 39, emoji: "🔨", en: "do / make (m)", hebrew: "עושה", translit: "осе" },
-  { id: 40, emoji: "🚶", en: "go / walk (m)", hebrew: "הולך", translit: "холех" },
-  { id: 41, emoji: "🏃‍♂️", en: "come (m)", hebrew: "בא", translit: "ба" },
-  { id: 42, emoji: "👁️", en: "see (m)", hebrew: "רואה", translit: "роэ" },
-  { id: 43, emoji: "👂", en: "hear (m)", hebrew: "שומע", translit: "шомеа" },
-  { id: 44, emoji: "🗣️", en: "say / speak (m)", hebrew: "אומר", translit: "омер" },
-  { id: 45, emoji: "🍽️", en: "eat (m)", hebrew: "אוכל", translit: "охель" },
-  { id: 46, emoji: "🥤", en: "drink (m)", hebrew: "שותה", translit: "шоте" },
-  { id: 47, emoji: "💼", en: "work (m)", hebrew: "עובד", translit: "овед" },
-  { id: 48, emoji: "🧠", en: "think (m)", hebrew: "חושב", translit: "хошев" },
-  { id: 49, emoji: "🤝", en: "understand (m)", hebrew: "מבין", translit: "мевин" },
-  { id: 50, emoji: "⚠️", en: "need / must (m)", hebrew: "צריך", translit: "царих" },
-  { id: 51, emoji: "💪", en: "can / able to (m)", hebrew: "יכול", translit: "яхоль" },
-  { id: 52, emoji: "💧", en: "water", hebrew: "מים", translit: "маим" },
-  { id: 53, emoji: "🍞", en: "bread", hebrew: "לחם", translit: "лехем" },
-  { id: 54, emoji: "☕", en: "coffee", hebrew: "קפה", translit: "кафе" },
-  { id: 55, emoji: "🫖", en: "tea", hebrew: "תה", translit: "те" },
-  { id: 56, emoji: "🥛", en: "milk", hebrew: "חלב", translit: "халав" },
-  { id: 57, emoji: "🧀", en: "cheese", hebrew: "גבינה", translit: "гвина" },
-  { id: 58, emoji: "🍎", en: "apple", hebrew: "תפוח", translit: "тапуах" },
-  { id: 59, emoji: "🧔", en: "man", hebrew: "איש", translit: "иш" },
-  { id: 60, emoji: "👱‍♀️", en: "woman", hebrew: "אישה", translit: "иша" },
-  { id: 61, emoji: "👦", en: "boy / kid (m)", hebrew: "ילד", translit: "елед" },
-  { id: 62, emoji: "👧", en: "girl / kid (f)", hebrew: "ילדה", translit: "яльда" },
-  { id: 63, emoji: "👨‍👧", en: "dad / father", hebrew: "אבא", translit: "аба" },
-  { id: 64, emoji: "👩‍👧", en: "mom / mother", hebrew: "אמא", translit: "има" },
-  { id: 65, emoji: "🧑‍🤝‍🧑", en: "friend", hebrew: "חבר", translit: "хавер" },
-  { id: 66, emoji: "👨‍👩‍👧‍👦", en: "family", hebrew: "משפחה", translit: "мишпаха" },
-  { id: 67, emoji: "🏠", en: "house / home", hebrew: "בית", translit: "баит" },
-  { id: 68, emoji: "🏙️", en: "city", hebrew: "עיר", translit: "ир" },
-  { id: 69, emoji: "🛣️", en: "street", hebrew: "רחוב", translit: "рехов" },
-  { id: 70, emoji: "🚪", en: "room", hebrew: "חדר", translit: "хедер" },
-  { id: 71, emoji: "🏪", en: "shop / store", hebrew: "חנות", translit: "ханут" },
-  { id: 72, emoji: "🏢", en: "work / job", hebrew: "עבודה", translit: "авода" },
-  { id: 73, emoji: "📍", en: "place", hebrew: "מקום", translit: "маком" },
-  { id: 74, emoji: "🚻", en: "restroom", hebrew: "שירותים", translit: "шерутим" },
-  { id: 75, emoji: "💵", en: "money", hebrew: "כסף", translit: "кесеф" },
-  { id: 76, emoji: "📖", en: "book", hebrew: "ספר", translit: "сефер" },
-  { id: 77, emoji: "📱", en: "phone", hebrew: "טלפון", translit: "телефон" },
-  { id: 78, emoji: "🪑", en: "table", hebrew: "שולחן", translit: "шульхан" },
-  { id: 79, emoji: "🚗", en: "car", hebrew: "אוטו", translit: "ото" },
-  { id: 80, emoji: "📦", en: "thing", hebrew: "דבר", translit: "давар" },
-  { id: 81, emoji: "🌱", en: "life", hebrew: "חיים", translit: "хаим" },
-  { id: 82, emoji: "🌍", en: "world", hebrew: "עולם", translit: "олам" },
-  { id: 83, emoji: "👍", en: "good", hebrew: "טוב", translit: "тов" },
-  { id: 84, emoji: "👎", en: "bad", hebrew: "רע", translit: "ра" },
-  { id: 85, emoji: "🐘", en: "big", hebrew: "גדול", translit: "гадоль" },
-  { id: 86, emoji: "🐁", en: "small", hebrew: "קטן", translit: "катан" },
-  { id: 87, emoji: "🌸", en: "beautiful", hebrew: "יפה", translit: "яфе" },
-  { id: 88, emoji: "🆕", en: "new", hebrew: "חדש", translit: "хадаш" },
-  { id: 89, emoji: "🏺", en: "old (objects)", hebrew: "ישן", translit: "яшан" },
-  { id: 90, emoji: "🔥", en: "hot", hebrew: "חם", translit: "хам" },
-  { id: 91, emoji: "❄️", en: "cold", hebrew: "קר", translit: "кар" },
-  { id: 92, emoji: "🪶", en: "easy / light", hebrew: "קל", translit: "каль" },
-  { id: 93, emoji: "📈", en: "a lot / many", hebrew: "הרבה", translit: "харбе" },
-  { id: 94, emoji: "🤏", en: "a little / few", hebrew: "קצת", translit: "кцат" },
-  { id: 95, emoji: "💥", en: "very", hebrew: "מאוד", translit: "меод" },
-  { id: 96, emoji: "🔁", en: "more / again", hebrew: "עוד", translit: "од" },
-  { id: 97, emoji: "👇", en: "here", hebrew: "פה", translit: "по" },
-  { id: 98, emoji: "👉", en: "there", hebrew: "שם", translit: "шам" },
-  { id: 99, emoji: "➡️", en: "right (dir)", hebrew: "ימינה", translit: "ямина" },
-  { id: 100, emoji: "⬅️", en: "left (dir)", hebrew: "שמאלה", translit: "смола" }
+  { id: 1, emoji: "👋", en: "hello / peace", hebrew: "שלום", hebrewNikud: "שָׁלוֹם", translit: "шалом" },
+  { id: 2, emoji: "🙏", en: "thank you", hebrew: "תודה", hebrewNikud: "תּוֹדָה", translit: "тода" },
+  { id: 3, emoji: "🤲", en: "please / welcome", hebrew: "בבקשה", hebrewNikud: "בְּבַקָּשָׁה", translit: "бевакаша" },
+  { id: 4, emoji: "🙇", en: "sorry / excuse me", hebrew: "סליחה", hebrewNikud: "סְלִיחָה", translit: "слиха" },
+  { id: 5, emoji: "👌", en: "okay / fine", hebrew: "בסדר", hebrewNikud: "בְּסֵדֶר", translit: "беседер" },
+  { id: 6, emoji: "✅", en: "yes", hebrew: "כן", hebrewNikud: "כֵּן", translit: "кен" },
+  { id: 7, emoji: "❌", en: "no / not", hebrew: "לא", hebrewNikud: "לֹא", translit: "ло" },
+  { id: 8, emoji: "🤷", en: "maybe", hebrew: "אולי", hebrewNikud: "אוּלַי", translit: "улай" },
+  { id: 9, emoji: "📦", en: "there is / have", hebrew: "יש", hebrewNikud: "יֵשׁ", translit: "еш" },
+  { id: 10, emoji: "🕳️", en: "there isn't / none", hebrew: "אין", hebrewNikud: "אֵין", translit: "эйн" },
+  { id: 11, emoji: "➕", en: "also / too", hebrew: "גם", hebrewNikud: "גַּם", translit: "гам" },
+  { id: 12, emoji: "👈", en: "I / me", hebrew: "אני", hebrewNikud: "אֲנִי", translit: "ани" },
+  { id: 13, emoji: "👉👨", en: "you (m)", hebrew: "אתה", hebrewNikud: "אַתָּה", translit: "ата" },
+  { id: 14, emoji: "👉👩", en: "you (f)", hebrew: "את", hebrewNikud: "אַתְּ", translit: "ат" },
+  { id: 15, emoji: "👨", en: "he", hebrew: "הוא", hebrewNikud: "הוּא", translit: "ху" },
+  { id: 16, emoji: "👩", en: "she", hebrew: "היא", hebrewNikud: "הִיא", translit: "хи" },
+  { id: 17, emoji: "👥", en: "we", hebrew: "אנחנו", hebrewNikud: "אֲנַחְנוּ", translit: "анахну" },
+  { id: 18, emoji: "👉👥", en: "you (plural)", hebrew: "אתם", hebrewNikud: "אַתֶּם", translit: "атем" },
+  { id: 19, emoji: "👥👥", en: "they", hebrew: "הם", hebrewNikud: "הֵם", translit: "хем" },
+  { id: 20, emoji: "❓", en: "what", hebrew: "מה", hebrewNikud: "מָה", translit: "ма" },
+  { id: 21, emoji: "🕵️", en: "who", hebrew: "מי", hebrewNikud: "מִי", translit: "ми" },
+  { id: 22, emoji: "📍❓", en: "where", hebrew: "איפה", hebrewNikud: "אֵיפֹה", translit: "эйфо" },
+  { id: 23, emoji: "⏰❓", en: "when", hebrew: "מתי", hebrewNikud: "מָתַי", translit: "матай" },
+  { id: 24, emoji: "🤔❓", en: "why", hebrew: "למה", hebrewNikud: "לָמָה", translit: "лама" },
+  { id: 25, emoji: "⚙️❓", en: "how", hebrew: "איך", hebrewNikud: "אֵיךְ", translit: "эйх" },
+  { id: 26, emoji: "🔢❓", en: "how much / many", hebrew: "כמה", hebrewNikud: "כַּמָּה", translit: "кама" },
+  { id: 27, emoji: "⏱️", en: "now", hebrew: "עכשיו", hebrewNikud: "עַכְשָׁיו", translit: "ахшав" },
+  { id: 28, emoji: "📅", en: "today", hebrew: "היום", hebrewNikud: "הַיּוֹם", translit: "хайом" },
+  { id: 29, emoji: "🌅", en: "tomorrow", hebrew: "מחר", hebrewNikud: "מָחָר", translit: "махар" },
+  { id: 30, emoji: "🌇", en: "yesterday", hebrew: "אתמול", hebrewNikud: "אֶתְמוֹל", translit: "этмоль" },
+  { id: 31, emoji: "☀️", en: "day", hebrew: "יום", hebrewNikud: "יוֹם", translit: "йом" },
+  { id: 32, emoji: "🌙", en: "night", hebrew: "לילה", hebrewNikud: "לַיְלָה", translit: "лайла" },
+  { id: 33, emoji: "☕🌅", en: "morning", hebrew: "בוקר", hebrewNikud: "בֹּקֶר", translit: "бокер" },
+  { id: 34, emoji: "🌆", en: "evening", hebrew: "ערב", hebrewNikud: "עֶרֶב", translit: "эрев" },
+  { id: 35, emoji: "⏳", en: "time", hebrew: "זמן", hebrewNikud: "זְמַן", translit: "зман" },
+  { id: 36, emoji: "💭", en: "want (m)", hebrew: "רוצה", hebrewNikud: "רוֹצֶה", translit: "роце" },
+  { id: 37, emoji: "❤️", en: "love / like (m)", hebrew: "אוהב", hebrewNikud: "אוֹהֵב", translit: "охев" },
+  { id: 38, emoji: "💡", en: "know (m)", hebrew: "יודע", hebrewNikud: "יוֹדֵעַ", translit: "йодеа" },
+  { id: 39, emoji: "🔨", en: "do / make (m)", hebrew: "עושה", hebrewNikud: "עוֹשֶׂה", translit: "осе" },
+  { id: 40, emoji: "🚶", en: "go / walk (m)", hebrew: "הולך", hebrewNikud: "הוֹלֵךְ", translit: "холех" },
+  { id: 41, emoji: "🏃‍♂️", en: "come (m)", hebrew: "בא", hebrewNikud: "בָּא", translit: "ба" },
+  { id: 42, emoji: "👁️", en: "see (m)", hebrew: "רואה", hebrewNikud: "רוֹאֶה", translit: "роэ" },
+  { id: 43, emoji: "👂", en: "hear (m)", hebrew: "שומע", hebrewNikud: "שׁוֹמֵעַ", translit: "шомеа" },
+  { id: 44, emoji: "🗣️", en: "say / speak (m)", hebrew: "אומר", hebrewNikud: "אוֹמֵר", translit: "омер" },
+  { id: 45, emoji: "🍽️", en: "eat (m)", hebrew: "אוכל", hebrewNikud: "אוֹכֵל", translit: "охель" },
+  { id: 46, emoji: "🥤", en: "drink (m)", hebrew: "שותה", hebrewNikud: "שׁוֹתֶה", translit: "шоте" },
+  { id: 47, emoji: "💼", en: "work (m)", hebrew: "עובד", hebrewNikud: "עוֹבֵד", translit: "овед" },
+  { id: 48, emoji: "🧠", en: "think (m)", hebrew: "חושב", hebrewNikud: "חוֹשֵׁב", translit: "хошев" },
+  { id: 49, emoji: "🤝", en: "understand (m)", hebrew: "מבין", hebrewNikud: "מֵבִין", translit: "мевин" },
+  { id: 50, emoji: "⚠️", en: "need / must (m)", hebrew: "צריך", hebrewNikud: "צָרִיךְ", translit: "царих" },
+  { id: 51, emoji: "💪", en: "can / able to (m)", hebrew: "יכול", hebrewNikud: "יָכוֹל", translit: "яхоль" },
+  { id: 52, emoji: "💧", en: "water", hebrew: "מים", hebrewNikud: "מַיִם", translit: "маим" },
+  { id: 53, emoji: "🍞", en: "bread", hebrew: "לחם", hebrewNikud: "לֶחֶם", translit: "лехем" },
+  { id: 54, emoji: "☕", en: "coffee", hebrew: "קפה", hebrewNikud: "קָפֶה", translit: "кафе" },
+  { id: 55, emoji: "🫖", en: "tea", hebrew: "תה", hebrewNikud: "תֵּה", translit: "те" },
+  { id: 56, emoji: "🥛", en: "milk", hebrew: "חלב", hebrewNikud: "חָלָב", translit: "халав" },
+  { id: 57, emoji: "🧀", en: "cheese", hebrew: "גבינה", hebrewNikud: "גְּבִינָה", translit: "гвина" },
+  { id: 58, emoji: "🍎", en: "apple", hebrew: "תפוח", hebrewNikud: "תַּפּוּחַ", translit: "тапуах" },
+  { id: 59, emoji: "🧔", en: "man", hebrew: "איש", hebrewNikud: "אִישׁ", translit: "иш" },
+  { id: 60, emoji: "👱‍♀️", en: "woman", hebrew: "אישה", hebrewNikud: "אִשָּׁה", translit: "иша" },
+  { id: 61, emoji: "👦", en: "boy / kid (m)", hebrew: "ילד", hebrewNikud: "יֶלֶד", translit: "елед" },
+  { id: 62, emoji: "👧", en: "girl / kid (f)", hebrew: "ילדה", hebrewNikud: "יַלְדָּה", translit: "яльда" },
+  { id: 63, emoji: "👨‍👧", en: "dad / father", hebrew: "אבא", hebrewNikud: "אַבָּא", translit: "аба" },
+  { id: 64, emoji: "👩‍👧", en: "mom / mother", hebrew: "אמא", hebrewNikud: "אִמָּא", translit: "има" },
+  { id: 65, emoji: "🧑‍🤝‍🧑", en: "friend", hebrew: "חבר", hebrewNikud: "חָבֵר", translit: "хавер" },
+  { id: 66, emoji: "👨‍👩‍👧‍👦", en: "family", hebrew: "משפחה", hebrewNikud: "מִשְׁפָּחָה", translit: "мишпаха" },
+  { id: 67, emoji: "🏠", en: "house / home", hebrew: "בית", hebrewNikud: "בַּיִת", translit: "баит" },
+  { id: 68, emoji: "🏙️", en: "city", hebrew: "עיר", hebrewNikud: "עִיר", translit: "ир" },
+  { id: 69, emoji: "🛣️", en: "street", hebrew: "רחוב", hebrewNikud: "רְחוֹב", translit: "рехов" },
+  { id: 70, emoji: "🚪", en: "room", hebrew: "חדר", hebrewNikud: "חֶדֶר", translit: "хедер" },
+  { id: 71, emoji: "🏪", en: "shop / store", hebrew: "חנות", hebrewNikud: "חֲנוּת", translit: "ханут" },
+  { id: 72, emoji: "🏢", en: "work / job", hebrew: "עבודה", hebrewNikud: "עֲבוֹדָה", translit: "авода" },
+  { id: 73, emoji: "📍", en: "place", hebrew: "מקום", hebrewNikud: "מָקוֹם", translit: "маком" },
+  { id: 74, emoji: "🚻", en: "restroom", hebrew: "שירותים", hebrewNikud: "שֵׁרוּתִים", translit: "шерутим" },
+  { id: 75, emoji: "💵", en: "money", hebrew: "כסף", hebrewNikud: "כֶּסֶף", translit: "кесеф" },
+  { id: 76, emoji: "📖", en: "book", hebrew: "ספר", hebrewNikud: "סֵפֶר", translit: "сефер" },
+  { id: 77, emoji: "📱", en: "phone", hebrew: "טלפון", hebrewNikud: "טֶלֶפוֹן", translit: "телефон" },
+  { id: 78, emoji: "🪑", en: "table", hebrew: "שולחן", hebrewNikud: "שֻׁלְחָן", translit: "шульхан" },
+  { id: 79, emoji: "🚗", en: "car", hebrew: "אוטו", hebrewNikud: "אוֹטוֹ", translit: "ото" },
+  { id: 80, emoji: "📦", en: "thing", hebrew: "דבר", hebrewNikud: "דָּבָר", translit: "давар" },
+  { id: 81, emoji: "🌱", en: "life", hebrew: "חיים", hebrewNikud: "חַיִּים", translit: "хаим" },
+  { id: 82, emoji: "🌍", en: "world", hebrew: "עולם", hebrewNikud: "עוֹלָם", translit: "олам" },
+  { id: 83, emoji: "👍", en: "good", hebrew: "טוב", hebrewNikud: "טוֹב", translit: "тов" },
+  { id: 84, emoji: "👎", en: "bad", hebrew: "רע", hebrewNikud: "רַע", translit: "ра" },
+  { id: 85, emoji: "🐘", en: "big", hebrew: "גדול", hebrewNikud: "גָּדוֹל", translit: "гадоль" },
+  { id: 86, emoji: "🐁", en: "small", hebrew: "קטן", hebrewNikud: "קָטָן", translit: "катан" },
+  { id: 87, emoji: "🌸", en: "beautiful", hebrew: "יפה", hebrewNikud: "יָפֶה", translit: "яфе" },
+  { id: 88, emoji: "🆕", en: "new", hebrew: "חדש", hebrewNikud: "חָדָשׁ", translit: "хадаш" },
+  { id: 89, emoji: "🏺", en: "old (objects)", hebrew: "ישן", hebrewNikud: "יָשָׁן", translit: "яшан" },
+  { id: 90, emoji: "🔥", en: "hot", hebrew: "חם", hebrewNikud: "חַם", translit: "хам" },
+  { id: 91, emoji: "❄️", en: "cold", hebrew: "קר", hebrewNikud: "קַר", translit: "кар" },
+  { id: 92, emoji: "🪶", en: "easy / light", hebrew: "קל", hebrewNikud: "קַל", translit: "каль" },
+  { id: 93, emoji: "📈", en: "a lot / many", hebrew: "הרבה", hebrewNikud: "הַרְבֵּה", translit: "харбе" },
+  { id: 94, emoji: "🤏", en: "a little / few", hebrew: "קצת", hebrewNikud: "קְצָת", translit: "кцат" },
+  { id: 95, emoji: "💥", en: "very", hebrew: "מאוד", hebrewNikud: "מְאֹד", translit: "меод" },
+  { id: 96, emoji: "🔁", en: "more / again", hebrew: "עוד", hebrewNikud: "עוֹד", translit: "од" },
+  { id: 97, emoji: "👇", en: "here", hebrew: "פה", hebrewNikud: "פֹּה", translit: "по" },
+  { id: 98, emoji: "👉", en: "there", hebrew: "שם", hebrewNikud: "שָׁם", translit: "шам" },
+  { id: 99, emoji: "➡️", en: "right (dir)", hebrew: "ימינה", hebrewNikud: "יָמִינָה", translit: "ямина" },
+  { id: 100, emoji: "⬅️", en: "left (dir)", hebrew: "שמאלה", hebrewNikud: "שְׂמֹאלָה", translit: "смола" }
 ];
 
 
@@ -672,6 +750,15 @@ function romanize(text) {
 }
 VOCABULARY.forEach(function (w) { w.translitEn = romanize(w.translit); });
 
+const POS_BY_ID = {};
+for (let i = 1; i <= 100; i++) {
+  if (i >= 36 && i <= 51) POS_BY_ID[i] = 'verb';
+  else if ((i >= 31 && i <= 35) || (i >= 52 && i <= 82)) POS_BY_ID[i] = 'noun';
+  else if (i >= 83 && i <= 92) POS_BY_ID[i] = 'adj';
+  else POS_BY_ID[i] = 'other';
+}
+VOCABULARY.forEach(function (w) { w.pos = POS_BY_ID[w.id] || 'other'; });
+
 
 const SOFIYOT = { 'מ':'ם','כ':'ך','פ':'ף','נ':'ן','צ':'ץ' };
 
@@ -680,20 +767,29 @@ const LS_KEY      = 'hebrew100_learned_v2';
 const LS_STATS    = 'hebrew100_stats_v2';
 const LS_SELECTED = 'hebrew100_selected_v2';
 const LS_SORT     = 'hebrew100_sort_v2';
+const LS_POSFILTER = 'hebrew100_posfilter_v1';
 const LS_LANG     = 'hebrew100_lang_v1';
 const LS_KB       = 'hebrew100_keyboard_v1';
 const LS_THEME    = 'hebrew_theme_v1';
+const LS_EMOJI    = 'hebrew100_emoji_v1';
+const LS_REV_MODE = 'hebrew100_reverse_v1';
+const LS_REV_SCRIPT = 'hebrew100_rev_script_v1';
 
 
 let learned = new Set(loadLearned());
 let stats = loadStats();
 let selected = new Set(loadSelected().filter(id => learned.has(id)));
 let dictSort = loadSort();
+let posFilter = loadPosFilter();
 let currentLang = loadLang();
 let currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 let currentSubTab = 'train';
 let keyboardOpen = loadKeyboard();
 let toastTimer = null;
+let showEmoji = loadShowEmoji();
+let reverseMode = loadReverseMode();
+let reverseScript = loadReverseScript();
+let reviewLocked = false;
 
 let currentLearnWord = null;
 let currentCells = [];
@@ -715,6 +811,32 @@ function loadKeyboard() {
     if (raw === '0') return false;
   } catch (e) {}
   return !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches);
+}
+function loadShowEmoji() {
+  try {
+    const raw = localStorage.getItem(LS_EMOJI);
+    if (raw === '0') return false;
+    if (raw === '1') return true;
+  } catch (e) {}
+  return true;
+}
+function saveShowEmoji() {
+  try { localStorage.setItem(LS_EMOJI, showEmoji ? '1' : '0'); } catch (e) {}
+}
+function loadReverseMode() {
+  try { return localStorage.getItem(LS_REV_MODE) === '1'; } catch (e) { return false; }
+}
+function saveReverseMode() {
+  try { localStorage.setItem(LS_REV_MODE, reverseMode ? '1' : '0'); } catch (e) {}
+}
+function loadReverseScript() {
+  try {
+    const v = localStorage.getItem(LS_REV_SCRIPT);
+    return (v === 'nikud' || v === 'cursive') ? v : 'plain';
+  } catch (e) { return 'plain'; }
+}
+function saveReverseScript() {
+  try { localStorage.setItem(LS_REV_SCRIPT, reverseScript); } catch (e) {}
 }
 
 
@@ -751,7 +873,25 @@ const I18N = {
     keyboardTitle: 'Клавиатура',
     keyboardHide: 'Скрыть клавиатуру',
     themeDark: 'Тёмная тема',
-    themeLight: 'Светлая тема'
+    themeLight: 'Светлая тема',
+    posAll: 'Все',
+    posNoun: 'Существительные',
+    posVerb: 'Глаголы',
+    resetFilter: 'Сбросить фильтр',
+    emptyFilterTitle: 'В этой категории пока нет слов',
+    emptyFilterText: 'Выучите слова этой категории или сбросьте фильтр.',
+    allCategoryTitle: 'Категория выучена',
+    allCategoryText: 'Все слова этой категории выучены. Смените фильтр или сбросьте его.',
+    allCategoryLearned: 'Все слова этой категории выучены',
+    allLearnedText: 'Отличная работа! Можно повторить слова в разделе «Проверка» или сбросить прогресс.',
+    emojiToggle: 'Эмодзи',
+    dirNormal: 'Перевод → Иврит',
+    dirReverse: 'Иврит → Перевод',
+    scriptPlain: 'Обычный',
+    scriptNikud: 'Никуд',
+    scriptCursive: 'Прописной',
+    reversePlaceholder: 'значение по-английски…',
+    showAnswer: 'Показать ответ'
   },
   en: {
     appTitle: 'Hebrew · 100 words',
@@ -785,7 +925,25 @@ const I18N = {
     keyboardTitle: 'Keyboard',
     keyboardHide: 'Hide keyboard',
     themeDark: 'Dark theme',
-    themeLight: 'Light theme'
+    themeLight: 'Light theme',
+    posAll: 'All',
+    posNoun: 'Nouns',
+    posVerb: 'Verbs',
+    resetFilter: 'Reset filter',
+    emptyFilterTitle: 'No words in this category yet',
+    emptyFilterText: 'Learn words in this category or reset the filter.',
+    allCategoryTitle: 'Category complete',
+    allCategoryText: 'All words in this category are learned. Change or reset the filter.',
+    allCategoryLearned: 'All words in this category are learned',
+    allLearnedText: 'Great job! Review the words in the “Review” section or reset your progress.',
+    emojiToggle: 'Emoji',
+    dirNormal: 'Translation → Hebrew',
+    dirReverse: 'Hebrew → Translation',
+    scriptPlain: 'Print',
+    scriptNikud: 'Niqqud',
+    scriptCursive: 'Cursive',
+    reversePlaceholder: 'English meaning…',
+    showAnswer: 'Show answer'
   }
 };
 
@@ -802,6 +960,58 @@ function t(key, vars) {
 }
 function translitFor(word) {
   return currentLang === 'en' ? word.translitEn : word.translit;
+}
+
+function posMatches(word) {
+  return posFilter === 'all' || word.pos === posFilter;
+}
+function filteredLearnedWords() {
+  return VOCABULARY.filter(function (w) { return learned.has(w.id) && posMatches(w); });
+}
+function setI18nText(el, key) {
+  if (!el) return;
+  el.dataset.i18n = key;
+  el.textContent = t(key);
+}
+function renderPosFilters() {
+  const containers = ['pos-filter-learn', 'pos-filter-train', 'pos-filter-dict'];
+  const cats = [
+    { key: 'all', label: t('posAll') },
+    { key: 'noun', label: t('posNoun') },
+    { key: 'verb', label: t('posVerb') }
+  ];
+  containers.forEach(function (id) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.innerHTML = '';
+    cats.forEach(function (cat) {
+      const total = cat.key === 'all'
+        ? VOCABULARY.length
+        : VOCABULARY.filter(function (w) { return w.pos === cat.key; }).length;
+      const done = cat.key === 'all'
+        ? learned.size
+        : VOCABULARY.filter(function (w) { return w.pos === cat.key && learned.has(w.id); }).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pos-chip' + (posFilter === cat.key ? ' active' : '');
+      btn.textContent = cat.label + ' ' + done + '/' + total;
+      btn.addEventListener('click', function () { setPosFilter(cat.key); });
+      box.appendChild(btn);
+    });
+  });
+}
+function setPosFilter(filter) {
+  if (filter !== 'all' && filter !== 'noun' && filter !== 'verb') filter = 'all';
+  if (posFilter === filter) return;
+  posFilter = filter;
+  savePosFilter();
+  reviewQueue = [];
+  updateProgress();
+  if (document.getElementById('screen-learn').classList.contains('active')) {
+    renderLearnCard();
+  } else if (document.getElementById('screen-review').classList.contains('active')) {
+    switchSubTab(currentSubTab);
+  }
 }
 
 
@@ -846,6 +1056,16 @@ function loadSort() {
 }
 function saveSort(v) {
   try { localStorage.setItem(LS_SORT, v); } catch {}
+}
+
+function loadPosFilter() {
+  try {
+    const v = localStorage.getItem(LS_POSFILTER);
+    return (v === 'noun' || v === 'verb') ? v : 'all';
+  } catch { return 'all'; }
+}
+function savePosFilter() {
+  try { localStorage.setItem(LS_POSFILTER, posFilter); } catch {}
 }
 
 
@@ -987,6 +1207,7 @@ function updateProgress() {
   document.getElementById('progress-text').textContent = `${learnedCount} / ${total}`;
   document.getElementById('review-count').textContent = learnedCount;
   document.getElementById('dict-count').textContent = learnedCount;
+  renderPosFilters();
 }
 
 function switchTab(name) {
@@ -1029,25 +1250,56 @@ document.querySelectorAll('.flag-btn').forEach(function (b) {
 });
 document.getElementById('btn-theme').addEventListener('click', toggleTheme);
 document.getElementById('btn-keyboard').addEventListener('click', onKeyboardToggle);
+document.getElementById('btn-emoji').addEventListener('click', toggleEmoji);
 document.getElementById('btn-keyboard-close').addEventListener('click', function () {
   setKeyboardOpen(false);
 });
 
 
 function renderLearnCard() {
-  let idx = -1;
-  for (let i = 0; i < VOCABULARY.length; i++) {
-    if (!learned.has(VOCABULARY[i].id)) { idx = i; break; }
+  const pool = VOCABULARY.filter(posMatches);
+  let next = null;
+  for (let i = 0; i < pool.length; i++) {
+    if (!learned.has(pool[i].id)) { next = pool[i]; break; }
   }
-  if (idx === -1) idx = Math.floor(Math.random() * VOCABULARY.length);
-  currentLearnWord = VOCABULARY[idx];
-  correctionMode = false;
 
   const card = document.getElementById('learn-card');
+  const empty = document.getElementById('learn-empty');
+  const hint = document.getElementById('learn-hint');
+
+  if (!next) {
+    currentLearnWord = null;
+    correctionMode = false;
+    card.style.display = 'none';
+    empty.style.display = 'flex';
+    hint.textContent = '';
+    const title = empty.querySelector('.empty-title');
+    const text = empty.querySelector('.empty-text');
+    const reset = document.getElementById('btn-learn-reset-filter');
+    if (posFilter === 'all') {
+      setI18nText(title, 'allLearned');
+      setI18nText(text, 'allLearnedText');
+      reset.style.display = 'none';
+      showToast(t('allLearned'));
+    } else {
+      setI18nText(title, 'allCategoryTitle');
+      setI18nText(text, 'allCategoryText');
+      reset.style.display = '';
+      showToast(t('allCategoryLearned'));
+    }
+    updateProgress();
+    return;
+  }
+
+  card.style.display = '';
+  empty.style.display = 'none';
+  currentLearnWord = next;
+  correctionMode = false;
+
   card.classList.remove('correct', 'wrong');
   document.getElementById('learn-emoji').textContent = currentLearnWord.emoji;
   document.getElementById('learn-en').textContent = currentLearnWord.en;
-  document.getElementById('learn-hint').textContent = '';
+  hint.textContent = '';
 
   buildCells(currentLearnWord.hebrew);
   updateProgress();
@@ -1128,6 +1380,7 @@ function attachCellHandler(input, idx) {
 }
 
 function checkLearnAnswer() {
+  if (!currentLearnWord) return;
   const expected = [...currentLearnWord.hebrew];
   let allFilled = currentCells.every(c => c.value && c.value.length > 0);
   if (!allFilled) {
@@ -1187,7 +1440,7 @@ document.getElementById('btn-audio-slow').addEventListener('click', () => {
 
 
 function buildReviewQueue() {
-  let pool = VOCABULARY.filter(w => learned.has(w.id));
+  let pool = filteredLearnedWords();
   if (selected.size > 0) {
     pool = pool.filter(w => selected.has(w.id));
   }
@@ -1198,49 +1451,177 @@ function buildReviewQueue() {
   return pool;
 }
 
+function updateReverseUI() {
+  const normalBtn = document.getElementById('btn-dir-normal');
+  const reverseBtn = document.getElementById('btn-dir-reverse');
+  if (normalBtn) normalBtn.classList.toggle('active', !reverseMode);
+  if (reverseBtn) reverseBtn.classList.toggle('active', reverseMode);
+  const scriptBar = document.getElementById('rev-script-bar');
+  if (scriptBar) scriptBar.style.display = reverseMode ? '' : 'none';
+  ['plain', 'nikud', 'cursive'].forEach(function (s) {
+    const b = document.getElementById('btn-script-' + s);
+    if (b) b.classList.toggle('active', reverseScript === s);
+  });
+}
+function setReverseMode(on) {
+  reverseMode = !!on;
+  saveReverseMode();
+  reviewQueue = [];
+  updateReverseUI();
+  syncKeyboard();
+  renderReview();
+}
+function setReverseScript(script) {
+  if (script !== 'plain' && script !== 'nikud' && script !== 'cursive') script = 'plain';
+  reverseScript = script;
+  saveReverseScript();
+  updateReverseUI();
+  renderReview();
+}
+
 function renderReview() {
   updateProgress();
+  const emptyBox = document.getElementById('review-empty');
+  const emptyTitle = emptyBox.querySelector('.empty-title');
+  const emptyText = emptyBox.querySelector('.empty-text');
+  const resetFilterBtn = document.getElementById('btn-train-reset-filter');
+  const content = document.getElementById('review-content');
+
   if (learned.size === 0) {
-    const box = document.getElementById('review-empty');
-    box.style.display = 'flex';
-    box.querySelector('.empty-title').textContent = t('emptyReviewTitle');
-    box.querySelector('.empty-text').textContent = t('emptyReviewText');
-    document.getElementById('review-content').style.display = 'none';
+    emptyBox.style.display = 'flex';
+    setI18nText(emptyTitle, 'emptyReviewTitle');
+    setI18nText(emptyText, 'emptyReviewText');
+    resetFilterBtn.style.display = 'none';
+    content.style.display = 'none';
     return;
   }
-  document.getElementById('review-empty').style.display = 'none';
-  document.getElementById('review-content').style.display = 'block';
 
-  
+  const filtered = filteredLearnedWords();
+  if (filtered.length === 0) {
+    emptyBox.style.display = 'flex';
+    setI18nText(emptyTitle, 'emptyFilterTitle');
+    setI18nText(emptyText, 'emptyFilterText');
+    resetFilterBtn.style.display = posFilter !== 'all' ? '' : 'none';
+    content.style.display = 'none';
+    return;
+  }
+
+  emptyBox.style.display = 'none';
+  content.style.display = 'block';
+
   updateTrainInfo();
 
   if (reviewQueue.length === 0) reviewQueue = buildReviewQueue();
   if (reviewQueue.length === 0) {
-    
-    document.getElementById('review-empty').style.display = 'flex';
-    document.getElementById('review-empty').querySelector('.empty-title').textContent = t('noSelectedTitle');
-    document.getElementById('review-empty').querySelector('.empty-text').textContent = t('noSelectedText');
-    document.getElementById('review-content').style.display = 'none';
+    emptyBox.style.display = 'flex';
+    setI18nText(emptyTitle, 'noSelectedTitle');
+    setI18nText(emptyText, 'noSelectedText');
+    resetFilterBtn.style.display = posFilter !== 'all' ? '' : 'none';
+    content.style.display = 'none';
     return;
   }
   currentReviewWord = reviewQueue.shift();
+  reviewLocked = false;
   const card = document.getElementById('review-card');
   card.classList.remove('correct', 'wrong');
-  document.getElementById('review-emoji').textContent = currentReviewWord.emoji;
-  document.getElementById('review-en').textContent = currentReviewWord.en;
+  const emojiEl = document.getElementById('review-emoji');
+  const enEl = document.getElementById('review-en');
+  const prompt = document.getElementById('review-hebrew-prompt');
+  const showBtn = document.getElementById('btn-review-show');
+  const answerEl = document.getElementById('review-answer');
   const input = document.getElementById('review-input');
+  emojiEl.textContent = currentReviewWord.emoji;
   input.value = '';
   input.classList.remove('shake');
-  document.getElementById('review-answer').textContent = '';
+  answerEl.textContent = '';
+  if (reverseMode) {
+    enEl.style.display = 'none';
+    showBtn.style.display = '';
+    prompt.style.display = '';
+    prompt.textContent = reverseScript === 'nikud'
+      ? (currentReviewWord.hebrewNikud || currentReviewWord.hebrew)
+      : currentReviewWord.hebrew;
+    prompt.classList.toggle('is-cursive', reverseScript === 'cursive');
+    prompt.classList.toggle('is-nikud', reverseScript === 'nikud');
+    input.lang = 'en';
+    input.dir = 'ltr';
+    input.style.direction = 'ltr';
+    input.placeholder = t('reversePlaceholder');
+    answerEl.style.direction = 'ltr';
+  } else {
+    enEl.style.display = '';
+    enEl.textContent = currentReviewWord.en;
+    showBtn.style.display = 'none';
+    prompt.style.display = 'none';
+    prompt.textContent = '';
+    prompt.classList.remove('is-cursive', 'is-nikud');
+    input.lang = 'he';
+    input.dir = 'rtl';
+    input.style.direction = 'rtl';
+    input.placeholder = '…';
+    answerEl.style.direction = 'rtl';
+  }
   applyKbInputGuard();
   setTimeout(function () { focusNoScroll(input); }, 200);
 }
 
+function normalizeEnglish(s) {
+  return String(s)
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function acceptedEnglishAnswers(enText) {
+  const out = [];
+  const add = function (s) {
+    const n = normalizeEnglish(s);
+    if (n && out.indexOf(n) === -1) out.push(n);
+    if (n.indexOf('to ') === 0) {
+      const w = n.slice(3).trim();
+      if (w && out.indexOf(w) === -1) out.push(w);
+    }
+  };
+  add(enText);
+  String(enText).split('/').forEach(function (part) { add(part); });
+  return out;
+}
+
 function checkReviewAnswer() {
-  if (!currentReviewWord) return;
+  if (!currentReviewWord || reviewLocked) return;
   const input = document.getElementById('review-input');
   const ans = (input.value || '').trim();
   if (!ans) { focusNoScroll(input); return; }
+
+  if (reverseMode) {
+    const norm = normalizeEnglish(ans);
+    const accepted = acceptedEnglishAnswers(currentReviewWord.en);
+    if (accepted.indexOf(norm) !== -1) {
+      reviewLocked = true;
+      recordResult(currentReviewWord.id, true);
+      speakWord(currentReviewWord, false);
+      const card = document.getElementById('review-card');
+      card.classList.add('correct');
+      if (navigator.vibrate) try { navigator.vibrate(50); } catch {}
+      showModal('🎉', currentReviewWord.en, translitFor(currentReviewWord), currentReviewWord.hebrew);
+      setTimeout(() => { hideModal(); renderReview(); }, 1500);
+    } else {
+      recordResult(currentReviewWord.id, false);
+      input.classList.add('shake');
+      const card = document.getElementById('review-card');
+      card.classList.add('wrong');
+      if (navigator.vibrate) try { navigator.vibrate(40); } catch {}
+      document.getElementById('review-answer').textContent = '✓ ' + currentReviewWord.en + ' · ' + translitFor(currentReviewWord);
+      reviewQueue.push(currentReviewWord);
+      setTimeout(() => {
+        input.classList.remove('shake');
+        card.classList.remove('wrong');
+      }, 600);
+    }
+    return;
+  }
 
   let normalized = [...ans].join('');
   if (normalized.length) {
@@ -1251,6 +1632,7 @@ function checkReviewAnswer() {
     }
   }
   if (normalized === currentReviewWord.hebrew) {
+    reviewLocked = true;
     recordResult(currentReviewWord.id, true);
     speakWord(currentReviewWord, false);
     const card = document.getElementById('review-card');
@@ -1273,6 +1655,24 @@ function checkReviewAnswer() {
   }
 }
 document.getElementById('btn-check').addEventListener('click', checkReviewAnswer);
+document.getElementById('btn-review-show').addEventListener('click', function () {
+  if (!currentReviewWord || !reverseMode || reviewLocked) return;
+  reviewLocked = true;
+  recordResult(currentReviewWord.id, false);
+  document.getElementById('review-answer').textContent = '✓ ' + currentReviewWord.en + ' · ' + translitFor(currentReviewWord);
+  reviewQueue.push(currentReviewWord);
+  const card = document.getElementById('review-card');
+  card.classList.add('wrong');
+  setTimeout(function () {
+    card.classList.remove('wrong');
+    renderReview();
+  }, 1200);
+});
+document.getElementById('btn-dir-normal').addEventListener('click', function () { setReverseMode(false); });
+document.getElementById('btn-dir-reverse').addEventListener('click', function () { setReverseMode(true); });
+document.getElementById('btn-script-plain').addEventListener('click', function () { setReverseScript('plain'); });
+document.getElementById('btn-script-nikud').addEventListener('click', function () { setReverseScript('nikud'); });
+document.getElementById('btn-script-cursive').addEventListener('click', function () { setReverseScript('cursive'); });
 document.getElementById('review-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); checkReviewAnswer(); }
 });
@@ -1280,16 +1680,29 @@ document.getElementById('review-input').addEventListener('keydown', (e) => {
 
 function renderDictionary() {
   updateProgress();
-  const learnedList = VOCABULARY.filter(w => learned.has(w.id));
+  const learnedList = filteredLearnedWords();
+  const emptyBox = document.getElementById('dict-empty');
+  const emptyTitle = emptyBox.querySelector('.empty-title');
+  const emptyText = emptyBox.querySelector('.empty-text');
+  const resetFilterBtn = document.getElementById('btn-dict-reset-filter');
 
   if (learnedList.length === 0) {
-    document.getElementById('dict-empty').style.display = 'flex';
+    emptyBox.style.display = 'flex';
     document.getElementById('dict-list').style.display = 'none';
     document.getElementById('dict-selected-info').style.display = 'none';
     document.querySelector('.dict-controls').style.display = 'none';
+    if (learned.size === 0) {
+      setI18nText(emptyTitle, 'emptyDictTitle');
+      setI18nText(emptyText, 'emptyDictText');
+      resetFilterBtn.style.display = 'none';
+    } else {
+      setI18nText(emptyTitle, 'emptyFilterTitle');
+      setI18nText(emptyText, 'emptyFilterText');
+      resetFilterBtn.style.display = posFilter !== 'all' ? '' : 'none';
+    }
     return;
   }
-  document.getElementById('dict-empty').style.display = 'none';
+  emptyBox.style.display = 'none';
   document.getElementById('dict-list').style.display = 'flex';
   document.getElementById('dict-selected-info').style.display = '';
   document.querySelector('.dict-controls').style.display = '';
@@ -1415,28 +1828,31 @@ function updateTrainInfo() {
   const infoEl = document.getElementById('train-info');
   if (!infoEl) return;
   if (learned.size === 0) { infoEl.textContent = ''; return; }
+  const filtered = filteredLearnedWords();
   if (selected.size > 0) {
-    infoEl.textContent = t('trainSelected', { n: selected.size, m: learned.size });
+    const sel = filtered.filter(function (w) { return selected.has(w.id); }).length;
+    infoEl.textContent = t('trainSelected', { n: sel, m: filtered.length });
   } else {
-    infoEl.textContent = t('trainAll', { n: learned.size });
+    infoEl.textContent = t('trainAll', { n: filtered.length });
   }
 }
 
 function updateDictSelectedInfo() {
-  const learnedList = VOCABULARY.filter(w => learned.has(w.id));
+  const learnedList = filteredLearnedWords();
   if (learnedList.length === 0) return;
   const infoEl = document.getElementById('dict-selected-info');
-  if (selected.size === 0) {
+  const sel = learnedList.filter(function (w) { return selected.has(w.id); }).length;
+  if (sel === 0) {
     infoEl.textContent = t('dictAll', { n: learnedList.length });
   } else {
-    infoEl.textContent = t('dictSelected', { n: selected.size, m: learnedList.length });
+    infoEl.textContent = t('dictSelected', { n: sel, m: learnedList.length });
   }
 }
 
 
 document.getElementById('btn-select-all').addEventListener('click', () => {
   VOCABULARY.forEach(w => {
-    if (learned.has(w.id)) selected.add(w.id);
+    if (learned.has(w.id) && posMatches(w)) selected.add(w.id);
   });
   saveSelected();
   reviewQueue = [];
@@ -1444,7 +1860,9 @@ document.getElementById('btn-select-all').addEventListener('click', () => {
 });
 
 document.getElementById('btn-select-none').addEventListener('click', () => {
-  selected.clear();
+  VOCABULARY.forEach(w => {
+    if (learned.has(w.id) && posMatches(w)) selected.delete(w.id);
+  });
   saveSelected();
   reviewQueue = [];
   renderDictionary();
@@ -1468,6 +1886,16 @@ function updateSortButton() {
   btn.classList.toggle('active-sort', dictSort !== 'default');
 }
 document.getElementById('btn-sort').addEventListener('click', cycleSort);
+
+document.getElementById('btn-learn-reset-filter').addEventListener('click', function () {
+  setPosFilter('all');
+});
+document.getElementById('btn-train-reset-filter').addEventListener('click', function () {
+  setPosFilter('all');
+});
+document.getElementById('btn-dict-reset-filter').addEventListener('click', function () {
+  setPosFilter('all');
+});
 
 
 function updateThemeButton() {
@@ -1495,6 +1923,22 @@ function toggleTheme() {
   applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
 }
 
+function applyEmojiSetting() {
+  document.documentElement.classList.toggle('hide-emoji', !showEmoji);
+  const btn = document.getElementById('btn-emoji');
+  if (btn) {
+    btn.classList.toggle('active', showEmoji);
+    const label = t('emojiToggle');
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  }
+}
+function toggleEmoji() {
+  showEmoji = !showEmoji;
+  saveShowEmoji();
+  applyEmojiSetting();
+}
+
 function updateFlags() {
   document.querySelectorAll('.flag-btn').forEach(function (b) {
     const active = b.dataset.lang === currentLang;
@@ -1511,6 +1955,8 @@ function applyLanguage() {
   });
   updateFlags();
   updateThemeButton();
+  applyEmojiSetting();
+  updateReverseUI();
   updateProgress();
   updateSortButton();
   updateTrainInfo();
@@ -1527,21 +1973,11 @@ function applyLanguage() {
   const hint = document.getElementById('learn-hint');
   if (hint) hint.textContent = '';
 
-  const reviewEmpty = document.getElementById('review-empty');
-  if (reviewEmpty && reviewEmpty.style.display !== 'none') {
-    const title = reviewEmpty.querySelector('.empty-title');
-    const text = reviewEmpty.querySelector('.empty-text');
-    if (learned.size === 0) {
-      title.textContent = t('emptyReviewTitle');
-      text.textContent = t('emptyReviewText');
-    } else {
-      title.textContent = t('noSelectedTitle');
-      text.textContent = t('noSelectedText');
-    }
+  if (document.getElementById('screen-learn').classList.contains('active')) {
+    renderLearnCard();
+  } else if (document.getElementById('screen-review').classList.contains('active')) {
+    switchSubTab(currentSubTab);
   }
-
-  const dict = document.getElementById('review-dict');
-  if (dict && dict.style.display !== 'none') renderDictionary();
 }
 
 function setLang(code) {
@@ -1631,7 +2067,7 @@ function kbContextOK() {
   const reviewActive = document.getElementById('screen-review').classList.contains('active');
   const trainBox = document.getElementById('review-train');
   const trainVisible = trainBox && trainBox.style.display !== 'none';
-  return learnActive || (reviewActive && currentSubTab === 'train' && trainVisible);
+  return learnActive || (reviewActive && currentSubTab === 'train' && trainVisible && !reverseMode);
 }
 
 function kbTarget() {
@@ -1645,6 +2081,7 @@ function kbTarget() {
   const reviewContent = document.getElementById('review-content');
   if (document.getElementById('screen-review').classList.contains('active') &&
       currentSubTab === 'train' &&
+      !reverseMode &&
       reviewContent && reviewContent.style.display !== 'none') {
     return reviewInputEl;
   }
