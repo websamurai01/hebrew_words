@@ -2,7 +2,7 @@
 
 [Open the app](https://websamurai01.github.io/hebrewcommonwords/) · [Русская версия](README_RU.md)
 
-A single-file, offline app for learning 100 common Hebrew words: letter-by-letter learning, memory checks, a dictionary with statistics, speech synthesis, and a built-in Hebrew keyboard.
+An offline app for learning 100 common Hebrew words: letter-by-letter learning, memory checks, a dictionary with statistics, speech synthesis, and a built-in Hebrew keyboard.
 
 ---
 
@@ -211,13 +211,13 @@ Final forms are used at the end of a word. In Learn mode they are inserted autom
 Yes, if `localStorage` is blocked or in a private window, progress may not survive after closing the tab.
 
 **Does it work offline?**
-Yes. All code and data are contained in the single HTML file.
+Yes. All code and data are contained in files next to `index.html`.
 
 ---
 
 ## Technical notes
 
-- One HTML file, no dependencies, no build step.
+- No dependencies, no build step: `index.html`, `css/style.css`, `js/data.js`, `js/app.js`.
 - Vanilla JavaScript.
 - Supported in modern Chrome, Edge, Firefox, Safari, and mobile browsers.
 - Speech output depends on voices installed in the browser/OS.
